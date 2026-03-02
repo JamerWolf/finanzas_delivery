@@ -4,8 +4,11 @@ import com.control_delivery.finanzas_delivery.createOrder
 import com.control_delivery.finanzas_delivery.domain.model.OrderStatus
 import com.control_delivery.finanzas_delivery.domain.repository.OrderRepository
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -15,18 +18,13 @@ class GetOrdersTotalAmountUseCaseTest {
 
     @Test
         fun `invoke returns correct total amount`(): Unit = runTest {
-            val orders = listOf(
-                createOrder("DIDI",10.0),
-                createOrder("UBER",20.0)
-            )
 
-            val statusList = listOf(OrderStatus.DELIVERED)
+            val expectedAmount = 30.0
+            every { repository.getOrdersTotalAmount() } returns flowOf(expectedAmount)
 
-            coEvery { repository.getOrdersByStates(statusList) } returns orders
+            val result = useCase().first()
 
-            val result = useCase(statusList)
-
-            assertEquals(30.0, result)
+            assertEquals(expectedAmount, result)
 
         }
 

@@ -1,7 +1,9 @@
 package com.control_delivery.finanzas_delivery.di
 
 import com.control_delivery.finanzas_delivery.data.repository.OrderInMemoryRepository
+import com.control_delivery.finanzas_delivery.data.repository.TimeBasedExpenseInMemoryRepository
 import com.control_delivery.finanzas_delivery.domain.repository.OrderRepository
+import com.control_delivery.finanzas_delivery.domain.repository.TimeBasedExpenseRepository
 import com.control_delivery.finanzas_delivery.domain.usecases.*
 import dagger.Module
 import dagger.Provides
@@ -12,6 +14,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+    // --- REPOSITORIES ---
     @Provides
     @Singleton
     fun provideOrderRepository(orderInMemoryRepository: OrderInMemoryRepository): OrderRepository {
@@ -26,6 +29,37 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideTimeBasedExpenseInMemoryRepository(): TimeBasedExpenseInMemoryRepository {
+        return TimeBasedExpenseInMemoryRepository()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTimeBasedExpenseRepository(
+        timeBasedExpenseInMemoryRepository: TimeBasedExpenseInMemoryRepository): TimeBasedExpenseRepository {
+        return timeBasedExpenseInMemoryRepository
+    }
+
+    // --- USE CASES (PURES) ---
+
+    @Provides
+    @Singleton
+    fun provideSyncTimeBasedExpensesUseCase(
+        repository: TimeBasedExpenseRepository
+    ): SyncTimeBasedExpensesUseCase {
+        return SyncTimeBasedExpensesUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetTotalTimeBasedExpensesImpactUseCase(
+        repository: TimeBasedExpenseRepository
+    ): GetTotalTimeBasedExpensesImpactUseCase {
+        return GetTotalTimeBasedExpensesImpactUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
     fun provideGetOrdersTotalAmountUseCase(
         orderRepository: OrderRepository
     ): GetOrdersTotalAmountUseCase {
@@ -34,10 +68,26 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideGetAmountNetUseCase(
+        getOrdersTotalAmountUseCase: GetOrdersTotalAmountUseCase,
+        getTotalTimeBasedExpensesImpactUseCase: GetTotalTimeBasedExpensesImpactUseCase
+    ): GetAmountNetUseCase {
+        return GetAmountNetUseCase(
+            getOrdersTotalAmountUseCase,
+            getTotalTimeBasedExpensesImpactUseCase
+        )
+    }
+
+    @Provides
+    @Singleton
     fun provideAddOrderUseCase(
-        orderRepository: OrderRepository
+        orderRepository: OrderRepository,
+        timeBasedExpenseRepository: TimeBasedExpenseRepository
     ): AddOrderUseCase {
-        return AddOrderUseCase(orderRepository)
+        return AddOrderUseCase(
+            orderRepository,
+            timeBasedExpenseRepository
+        )
     }
 
     @Provides

@@ -2,6 +2,7 @@ package com.control_delivery.finanzas_delivery.data.repository
 
 import com.control_delivery.finanzas_delivery.createOrder
 import com.control_delivery.finanzas_delivery.domain.model.OrderStatus
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
@@ -18,7 +19,7 @@ class OrderInMemoryRepositoryTest {
 
         val repository = OrderInMemoryRepository(orders)
 
-        val result = repository.getOrdersByStates(listOf(OrderStatus.DELIVERED))
+        val result = repository.getOrdersByStates(listOf(OrderStatus.DELIVERED)).first()
         assertEquals(2, result.size)
     }
 

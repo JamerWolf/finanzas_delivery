@@ -6,14 +6,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.control_delivery.finanzas_delivery.domain.model.OrderStatus
-import com.control_delivery.finanzas_delivery.domain.usecases.AddOrderUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.GetOrdersFlowUseCase
-import com.control_delivery.finanzas_delivery.domain.usecases.GetOrdersTotalAmountUseCase
 import com.control_delivery.finanzas_delivery.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import java.text.NumberFormat
-import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel

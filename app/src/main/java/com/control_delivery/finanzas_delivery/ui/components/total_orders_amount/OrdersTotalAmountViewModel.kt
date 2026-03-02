@@ -5,7 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.control_delivery.finanzas_delivery.domain.usecases.GetAmountNetUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.GetOrdersTotalAmountUseCase
+import com.control_delivery.finanzas_delivery.domain.usecases.SyncTimeBasedExpensesUseCase
 import com.control_delivery.finanzas_delivery.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -15,19 +17,22 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OrdersTotalAmountViewModel @Inject constructor(
-    private val getOrdersTotalAmountUseCase: GetOrdersTotalAmountUseCase
+    private val getAmountNetUseCase: GetAmountNetUseCase,
+    private val syncTimeBasedExpensesUseCase: SyncTimeBasedExpensesUseCase
 ) : ViewModel() {
     var uiState by mutableStateOf(TotalOrdersUiState())
         private set
 
     init {
         viewModelScope.launch {
+            syncTimeBasedExpensesUseCase()
+
             // Observar monto bruto semanal
             launch {
                 val (start, end) = DateUtils.getTimestampRange("THIS_WEEK")
-                getOrdersTotalAmountUseCase(start, end).collect { total ->
+                getAmountNetUseCase(start, end).collect { weeklyNet ->
                     uiState = uiState.copy(
-                        totalAmountWeek = NumberFormat.getCurrencyInstance(Locale.GERMANY).format(total)
+                        totalAmountWeek = NumberFormat.getCurrencyInstance(Locale.GERMANY).format(weeklyNet)
                     )
                 }
             }
@@ -35,7 +40,7 @@ class OrdersTotalAmountViewModel @Inject constructor(
             // Observar monto bruto diario
             launch {
                 val (start, end) = DateUtils.getTimestampRange("TODAY")
-                getOrdersTotalAmountUseCase(start, end).collect { total ->
+                getAmountNetUseCase(start, end).collect { total ->
                     uiState = uiState.copy(
                         totalAmountDay = NumberFormat.getCurrencyInstance(Locale.GERMANY).format(total)
                     )
