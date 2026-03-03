@@ -105,4 +105,12 @@ object AppModule {
     ): GetTimeBasedExpensesUseCase {
         return GetTimeBasedExpensesUseCase(repository)
     }
+
+    @Provides
+    @Singleton
+    fun provideGetTimeBasedExpenseByIdUseCase(
+        repository: TimeBasedExpenseRepository
+    ): GetTimeBasedExpenseByIdUseCase {
+        return GetTimeBasedExpenseByIdUseCase(repository)
+    }
 }

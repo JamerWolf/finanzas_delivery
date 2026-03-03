@@ -21,8 +21,8 @@ fun TimeBasedExpensesScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(state.expenses) { expense ->
-            TimeBasedExpenseItem(expense = expense)
+        items(state.expenses, key = { it.id }) { expense ->
+            TimeBasedExpenseItem(expenseId = expense.id)
         }
     }
 }

@@ -23,7 +23,14 @@ class TimeBasedExpenseInMemoryRepository(
         }
     }
 
+    override fun getExpenseById(id: String): Flow<TimeBasedExpense?> {
+        return _expensesFlow.map { expenses ->
+            expenses.find { it.id == id }
+        }
+    }
+
     override fun syncExpenses(today: LocalDate) {
+
         val currentList = _expensesFlow.value
         var hasChanges = false
 

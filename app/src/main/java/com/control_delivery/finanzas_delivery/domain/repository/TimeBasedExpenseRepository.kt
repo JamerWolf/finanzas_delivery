@@ -16,7 +16,13 @@ interface TimeBasedExpenseRepository {
     fun getDailyExpenses(today: LocalDate = LocalDate.now()): Flow<Double>
 
     /**
+     * Get a flow of a specific expense by its ID.
+     */
+    fun getExpenseById(id: String): Flow<TimeBasedExpense?>
+
+    /**
      * Check if any expense has reached the next deadline if yes reset accumulated amount and renew deadline of the expenses.
+
      * @param today The date to check.
      */
     fun syncExpenses(today: LocalDate = LocalDate.now())
