@@ -1,0 +1,49 @@
+package com.control_delivery.finanzas_delivery.ui.expenses
+
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import com.control_delivery.finanzas_delivery.ui.expenses.distance_based.DistanceExpensesScreen
+import com.control_delivery.finanzas_delivery.ui.expenses.time_based.TimeBasedExpensesScreen
+
+@Composable
+fun ExpensesScreen() {
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Time", "Distance")
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        floatingActionButton = {
+            FloatingActionButton(onClick = { /* TODO: Creation dialogue */ }) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Expense")
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+        ) {
+            PrimaryTabRow(selectedTabIndex = selectedTab) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = { Text(text = title) }
+                    )
+                }
+            }
+
+            when (selectedTab) {
+                0 -> TimeBasedExpensesScreen()
+                1 -> DistanceExpensesScreen()
+            }
+        }
+    }
+}

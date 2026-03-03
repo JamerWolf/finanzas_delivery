@@ -40,7 +40,7 @@ object AppModule {
         return timeBasedExpenseInMemoryRepository
     }
 
-    // --- USE CASES (PURES) ---
+    // --- USE CASES ---
 
     @Provides
     @Singleton
@@ -96,5 +96,13 @@ object AppModule {
         orderRepository: OrderRepository
     ): GetOrdersFlowUseCase {
         return GetOrdersFlowUseCase(orderRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetTimeBasedExpensesUseCase(
+        repository: TimeBasedExpenseRepository
+    ): GetTimeBasedExpensesUseCase {
+        return GetTimeBasedExpensesUseCase(repository)
     }
 }

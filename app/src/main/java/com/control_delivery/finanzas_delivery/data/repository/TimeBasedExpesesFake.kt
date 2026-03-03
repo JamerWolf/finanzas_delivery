@@ -20,7 +20,14 @@ object TimeBasedExpensesFake {
             accumulatedAmount = 0.0,
             frequency = ExpenseFrequency.Monthly(dayOfMonth = 1),
             startTimestamp = startOfToday
-        )
+        ),
+        TimeBasedExpense(
+            description = "Internet Bill",
+            amount = 15000.0,
+            accumulatedAmount = 0.0,
+            frequency = ExpenseFrequency.Monthly(dayOfMonth = 1),
+            startTimestamp = startOfToday
+        ),
     )
 
     fun getDailyExpense(today: LocalDate): Double {
