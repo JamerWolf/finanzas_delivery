@@ -41,7 +41,4 @@ class TimeBasedExpensesViewModel @Inject constructor(
             }
         }
     }
-
-    //TODO: hacer un metodo que reciva una expense y llamar a un metodo del viewmodel de expenseitem para
-    // configurar el estado del expenseitem.
 }

@@ -12,10 +12,12 @@ data class Order(
     val totalAmount: Double,
     val status: OrderStatus = OrderStatus.ON_THE_WAY_TO_RECEIVE,
     val timestamp: Long = System.currentTimeMillis(),
+    val kmDeduction: Double = 0.0,
+    val netAmount: Double = totalAmount - kmDeduction,
     val isDeleted: Boolean = false
 ) {
     init {
-        require(totalAmount >= 0.0) { "Total amount must be non-negative" }
+        require(totalAmount >= 0.0) { "Total amount cannot be negative" }
     }
 
     override fun toString(): String {

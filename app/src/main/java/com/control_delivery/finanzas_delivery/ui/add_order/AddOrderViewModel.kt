@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.control_delivery.finanzas_delivery.domain.model.Order
 import com.control_delivery.finanzas_delivery.domain.model.OrderStatus
 import com.control_delivery.finanzas_delivery.domain.usecases.AddOrderUseCase
+import com.control_delivery.finanzas_delivery.domain.usecases.ProcessOrderIncomeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -15,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddOrderViewModel @Inject constructor(
-    private val addOrderUseCase: AddOrderUseCase
+    private val addOrderUseCase: AddOrderUseCase,
+    private val processOrderIncomeUseCase: ProcessOrderIncomeUseCase
 ) : ViewModel() {
     var uiState by mutableStateOf(AddOrderUiState())
         private set
@@ -36,10 +38,14 @@ class AddOrderViewModel @Inject constructor(
             uiState = uiState.copy(isSaving = true)
 
             val amount = uiState.amount.toDoubleOrNull() ?: 0.0
+            val processingResult = processOrderIncomeUseCase(amount)
+            Timber.d("Final net amount: $processingResult")
+
             val newOrder = Order(
                 platform = uiState.platform,
                 customerAddress = uiState.address,
                 totalAmount = amount,
+                kmDeduction = processingResult.kmDeduction ,
                 status = OrderStatus.DELIVERED
             )
             

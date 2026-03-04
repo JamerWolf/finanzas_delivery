@@ -27,7 +27,7 @@ class GetTotalTimeBasedExpensesImpactUseCaseTest {
         val dailyImpact = 10000.0
         val expectedTotalImpact = dailyImpact * 3
 
-        every { repository.getDailyExpenses(startDate) } returns flowOf(dailyImpact)
+        every { repository.getDailyAmountExpenses(startDate) } returns flowOf(dailyImpact)
 
         val result = useCase(startTimestamp, endTimestamp).first()
 
@@ -41,7 +41,7 @@ class GetTotalTimeBasedExpensesImpactUseCaseTest {
         val timestamp = date.atStartOfDay(zoneId).toInstant().toEpochMilli()
 
         val dailyImpact = 15.0
-        every { repository.getDailyExpenses(date) } returns flowOf(dailyImpact)
+        every { repository.getDailyAmountExpenses(date) } returns flowOf(dailyImpact)
 
         val result = useCase(timestamp, timestamp).first()
 

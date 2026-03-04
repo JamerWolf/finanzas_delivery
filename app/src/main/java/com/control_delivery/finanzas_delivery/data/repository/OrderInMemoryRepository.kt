@@ -42,4 +42,11 @@ class OrderInMemoryRepository (
         }
     }
 
+    override fun getOrdersNetTotal(startDate: Long, endDate: Long): Flow<Double> {
+        return _ordersFlow.map { orders ->
+            orders.filter { it.status == OrderStatus.DELIVERED && it.timestamp in startDate..endDate }
+                .sumOf { it.netAmount }
+        }
+    }
+
 }

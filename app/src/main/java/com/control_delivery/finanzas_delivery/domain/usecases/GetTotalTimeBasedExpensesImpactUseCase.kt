@@ -18,10 +18,16 @@ class GetTotalTimeBasedExpensesImpactUseCase(private val repository: TimeBasedEx
         val zoneId = ZoneId.systemDefault()
         val startLocalDate = Instant.ofEpochMilli(startDate).atZone(zoneId).toLocalDate()
         val endLocalDate = Instant.ofEpochMilli(endDate).atZone(zoneId).toLocalDate()
-        val days = endLocalDate.toEpochDay() - startLocalDate.toEpochDay() + 1
+        return repository.getAllExpenses().map { expenses ->
+            var totalImpact = 0.0
+            var currentDate = startLocalDate
 
-        return repository.getDailyExpenses(startLocalDate).map { dailyExpenses ->
-            dailyExpenses * days
+            while (!currentDate.isAfter(endLocalDate)) {
+                totalImpact += expenses.filter { !it.isDeleted }
+                    .sumOf { it.getFullDailyQuota(currentDate) }
+                currentDate = currentDate.plusDays(1)
+            }
+            totalImpact
         }
     }
 }

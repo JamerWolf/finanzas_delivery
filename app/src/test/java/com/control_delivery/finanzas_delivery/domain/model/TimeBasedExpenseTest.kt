@@ -26,7 +26,9 @@ class TimeBasedExpenseTest {
             accumulatedAmount = 0.0,
             frequency = ExpenseFrequency.Monthly(dayOfMonth = 1),
             startTimestamp = today.atStartOfDay(zoneId).toInstant().toEpochMilli(),
-            nextDeadline = deadline
+            nextDeadline = deadline,
+            contributionToday = 1000.0,
+            lastContributionTimestamp = today.atStartOfDay(zoneId).toInstant().toEpochMilli()
         )
     }
 
@@ -69,7 +71,6 @@ class TimeBasedExpenseTest {
             nextDeadline = deadline)
 
         val isExpired = expiredExpense.isExpired(Instant.ofEpochMilli(today).atZone(zoneId).toLocalDate())
-        println(isExpired)
 
         assertTrue(isExpired)
     }
@@ -95,10 +96,23 @@ class TimeBasedExpenseTest {
         val renewedExpense = expiredExpense.renew(Instant.ofEpochMilli(today).atZone(zoneId).toLocalDate())
         val deadlineActualLocalDate = Instant.ofEpochMilli(renewedExpense.nextDeadline).atZone(zoneId).toLocalDate()
 
-        print(renewedExpense.nextDeadline)
-
         assertEquals(deadlineExpectedLocalDate, deadlineActualLocalDate)
 
+    }
+
+    @Test
+    fun `getRemainingDailyQuota should return the correct amount for today`() {
+        val remainingQuota = expense.getRemainingDailyQuota(today)
+        assertEquals(9000.0, remainingQuota, 0.01)
+    }
+
+    @Test
+    fun `syncDailyContribution should reset contributionToday for today`() {
+        val nextDay = today.plusDays(1)
+
+        val expenseWithResetContribution = expense.syncDailyContribution(nextDay)
+
+        assertEquals(0.0, expenseWithResetContribution.contributionToday, 0.01)
     }
 
 }

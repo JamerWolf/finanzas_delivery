@@ -17,9 +17,10 @@ class TimeBasedExpenseInMemoryRepository(
         return _expensesFlow.asStateFlow()
     }
 
-    override fun getDailyExpenses(today: LocalDate): Flow<Double> {
-        return _expensesFlow.map {
-            TimeBasedExpensesFake.getDailyExpense(today)
+    override fun getDailyAmountExpenses(today: LocalDate): Flow<Double> {
+        return _expensesFlow.map { list ->
+            list.filter { !it.isDeleted }
+                .sumOf { it.getDailyAmount(today) }
         }
     }
 
@@ -27,6 +28,17 @@ class TimeBasedExpenseInMemoryRepository(
         return _expensesFlow.map { expenses ->
             expenses.find { it.id == id }
         }
+    }
+
+    override suspend fun updateExpenses(expenses: List<TimeBasedExpense>) {
+        expenses.forEach { updated ->
+            val index = this.expenses.indexOfFirst { it.id == updated.id }
+            if (index != -1) {
+                this.expenses[index] = updated
+            }
+        }
+
+        _expensesFlow.value = this.expenses.toList()
     }
 
     override fun syncExpenses(today: LocalDate) {

@@ -30,8 +30,44 @@ data class TimeBasedExpense(
     val frequency: ExpenseFrequency,
     val startTimestamp: Long,
     val isDeleted: Boolean = false,
-    val nextDeadline: Long = calculateDeadline(startTimestamp, frequency)
+    val nextDeadline: Long = calculateDeadline(startTimestamp, frequency),
+    val contributionToday: Double = 0.0,
+    val lastContributionTimestamp: Long? = null
 ) {
+    /**
+     * Calculates the total savings quota assigned for this day.
+     * Ignores any contributions made during the current day to maintain
+     * consistency in net balance reports.
+     */
+    fun getFullDailyQuota(today: LocalDate): Double {
+        val balancePendingAtStartOfDay = amount - (accumulatedAmount - contributionToday)
+        return balancePendingAtStartOfDay / getDaysUntilDeadline(today)
+    }
+
+    /**
+     * Calculate how much money you still need to save TODAY to reach the goal daily.
+     */
+    fun getRemainingDailyQuota(today: LocalDate): Double {
+        val totalNeededToday = getDailyAmount(today)
+        return (totalNeededToday - contributionToday).coerceAtLeast(0.0)
+    }
+
+    /**
+     * Check if the day has changed since the last contribution.
+     * If it is a new day, return a copy with the daily counter set to 0.
+     */
+    fun syncDailyContribution(today: LocalDate): TimeBasedExpense {
+        val zoneId = ZoneId.systemDefault()
+        val lastDate = lastContributionTimestamp?.let {
+            Instant.ofEpochMilli(it).atZone(zoneId).toLocalDate()
+        }
+        return if (lastDate == null || today.isAfter(lastDate)) {
+            this.copy(contributionToday = 0.0)
+        } else {
+            this
+        }
+    }
+
     /**
      * Calculate the daily amount of the expense.
      */
@@ -65,6 +101,7 @@ data class TimeBasedExpense(
     fun renew(today: LocalDate): TimeBasedExpense {
         if (frequency !is ExpenseFrequency.Once && isExpired(today)) {
             return this.copy(
+                contributionToday = 0.0,
                 accumulatedAmount = 0.0,
                 nextDeadline=calculateDeadline(nextDeadline, frequency))
         }

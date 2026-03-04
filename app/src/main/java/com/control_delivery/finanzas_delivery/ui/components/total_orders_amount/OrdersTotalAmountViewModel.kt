@@ -11,6 +11,7 @@ import com.control_delivery.finanzas_delivery.domain.usecases.SyncTimeBasedExpen
 import com.control_delivery.finanzas_delivery.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.text.NumberFormat
 import java.util.Locale
 import javax.inject.Inject
@@ -27,7 +28,7 @@ class OrdersTotalAmountViewModel @Inject constructor(
         viewModelScope.launch {
             syncTimeBasedExpensesUseCase()
 
-            // Observar monto bruto semanal
+            // Observe gross weekly amount
             launch {
                 val (start, end) = DateUtils.getTimestampRange("THIS_WEEK")
                 getAmountNetUseCase(start, end).collect { weeklyNet ->
@@ -37,10 +38,11 @@ class OrdersTotalAmountViewModel @Inject constructor(
                 }
             }
 
-            // Observar monto bruto diario
+            // Observe daily gross amount
             launch {
                 val (start, end) = DateUtils.getTimestampRange("TODAY")
                 getAmountNetUseCase(start, end).collect { total ->
+                    Timber.d("Net amount: $total")
                     uiState = uiState.copy(
                         totalAmountDay = NumberFormat.getCurrencyInstance(Locale.GERMANY).format(total)
                     )

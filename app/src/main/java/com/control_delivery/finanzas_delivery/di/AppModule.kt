@@ -68,12 +68,20 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideGetOrdersNetTotalUseCase(
+        orderRepository: OrderRepository
+    ): GetOrdersNetTotalUseCase {
+        return GetOrdersNetTotalUseCase(orderRepository)
+    }
+
+    @Provides
+    @Singleton
     fun provideGetAmountNetUseCase(
-        getOrdersTotalAmountUseCase: GetOrdersTotalAmountUseCase,
+        getOrdersNetTotalUseCase: GetOrdersNetTotalUseCase,
         getTotalTimeBasedExpensesImpactUseCase: GetTotalTimeBasedExpensesImpactUseCase
     ): GetAmountNetUseCase {
         return GetAmountNetUseCase(
-            getOrdersTotalAmountUseCase,
+            getOrdersNetTotalUseCase,
             getTotalTimeBasedExpensesImpactUseCase
         )
     }
@@ -113,4 +121,20 @@ object AppModule {
     ): GetTimeBasedExpenseByIdUseCase {
         return GetTimeBasedExpenseByIdUseCase(repository)
     }
+
+    @Provides
+    @Singleton
+    fun provideApplyKmDeductionUseCase(): ApplyKmDeductionUseCase = ApplyKmDeductionUseCase()
+
+    @Provides
+    @Singleton
+    fun provideApplyTimeBasedDeductionUseCase(repo: TimeBasedExpenseRepository): ApplyTimeBasedDeductionUseCase =
+        ApplyTimeBasedDeductionUseCase(repo)
+
+    @Provides
+    @Singleton
+    fun provideProcessOrderIncomeUseCase(
+        kmFilter: ApplyKmDeductionUseCase,
+        timeFilter: ApplyTimeBasedDeductionUseCase
+    ): ProcessOrderIncomeUseCase = ProcessOrderIncomeUseCase(kmFilter, timeFilter)
 }

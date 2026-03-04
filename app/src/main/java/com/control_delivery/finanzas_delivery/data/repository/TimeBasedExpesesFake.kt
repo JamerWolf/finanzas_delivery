@@ -29,10 +29,4 @@ object TimeBasedExpensesFake {
             startTimestamp = startOfToday
         ),
     )
-
-    fun getDailyExpense(today: LocalDate): Double {
-        return TimeBasedExpensesFake.expenses.sumOf { expense ->
-            expense.getDailyAmount(today)
-        }
-    }
 }

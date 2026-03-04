@@ -12,4 +12,6 @@ public interface OrderRepository {
     fun getOrdersTotalAmount(startDate: Long, endDate: Long): Flow<Double>
     fun getOrdersByStatesInDateRange(status: List<OrderStatus>,
                                      startDate: Long, endDate: Long): Flow<List<Order>>
+    fun getOrdersNetTotal(startDate: Long, endDate: Long): Flow<Double>
+
 }
