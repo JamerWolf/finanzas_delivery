@@ -14,7 +14,6 @@ import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,8 +21,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.control_delivery.finanzas_delivery.domain.model.ExpenseFrequency
-import com.control_delivery.finanzas_delivery.domain.model.TimeBasedExpense
 import com.control_delivery.finanzas_delivery.ui.theme.Finanzas_deliveryTheme
 
 @Composable
@@ -71,22 +68,60 @@ fun TimeBasedExpenseItemContent(
                     color = state.daysLeftColor
                 )
             }
-
-            // Progress Bar and Percentage
+            // Progress Bar and Percentage Daily
+            Text("Daily Progress", style = MaterialTheme.typography.labelSmall)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 LinearProgressIndicator(
-                    progress = { state.progress },
+                    progress = { state.dailyProgress },
                     modifier = Modifier.weight(1f).height(8.dp),
                     color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.surfaceVariant,
                     strokeCap = ProgressIndicatorDefaults.LinearStrokeCap
                 )
                 Text(
-                    text = state.progressText,
+                    text = state.dailyProgressText,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            // Amounts
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = state.savedToday,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = state.dailyGoalAmountText,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            // Progress Bar and Percentage General
+            Text("General Progress", style = MaterialTheme.typography.labelSmall)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                LinearProgressIndicator(
+                    progress = { state.generalProgress },
+                    modifier = Modifier.weight(1f).height(8.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    strokeCap = ProgressIndicatorDefaults.LinearStrokeCap
+                )
+                Text(
+                    text = state.generalProgressText,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -103,7 +138,7 @@ fun TimeBasedExpenseItemContent(
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
-                    text = state.goalAmountText,
+                    text = state.generalGoalAmountText,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -121,10 +156,14 @@ fun TimeBasedExpenseItemPreview() {
                 description = "Example Expense",
                 daysLeftText = "In 5 days",
                 daysLeftColor = Color.Red,
-                progress = 0.5f,
-                progressText = "50%",
+                generalProgress = 0.5f,
+                generalProgressText = "50%",
                 savedAmountText = "Saved: $100.00",
-                goalAmountText = "Goal: $200.00"
+                generalGoalAmountText = "Goal: $200.00",
+                dailyProgress = 0.3f,
+                dailyProgressText = "30%",
+                dailyGoalAmountText = "Goal: $50.00",
+                savedToday = "Saved: $20.00"
             )
         )
     }

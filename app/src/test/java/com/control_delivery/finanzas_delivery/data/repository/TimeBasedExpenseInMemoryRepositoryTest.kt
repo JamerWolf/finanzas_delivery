@@ -18,16 +18,16 @@ class TimeBasedExpenseInMemoryRepositoryTest {
         TimeBasedExpense(
             id = "1",
             description = "Test Bill",
-            amount = 30000.0,
-            accumulatedAmount = 0.0,
+            amount = 30000,
+            accumulatedAmount = 0,
             frequency = ExpenseFrequency.Monthly(dayOfMonth = 1),
             startTimestamp = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         ),
         TimeBasedExpense(
             id = "2",
             description = "Test Bill 2",
-            amount = 15000.0,
-            accumulatedAmount = 0.0,
+            amount = 15000,
+            accumulatedAmount = 0,
             frequency = ExpenseFrequency.Monthly(dayOfMonth = 1),
             startTimestamp = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         )
@@ -38,7 +38,7 @@ class TimeBasedExpenseInMemoryRepositoryTest {
     @Test
     fun `getDailyExpenses should return the correct amount for today`() = runTest {
         val dailyExpenses = repository.getDailyAmountExpenses(today).first()
-        assertEquals(15000.0, dailyExpenses, 0.01)
+        assertEquals(15000L, dailyExpenses)
     }
 
     @Test
@@ -48,8 +48,8 @@ class TimeBasedExpenseInMemoryRepositoryTest {
 
         val initialExpense = TimeBasedExpense(
             description = "Overdue Invoice",
-            amount = 30000.0,
-            accumulatedAmount = 15000.0,
+            amount = 30000,
+            accumulatedAmount = 15000,
             frequency = ExpenseFrequency.Monthly(dayOfMonth = 1),
             startTimestamp = startDay.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         )
@@ -60,7 +60,7 @@ class TimeBasedExpenseInMemoryRepositoryTest {
         val updatedExpense = repository.getAllExpenses().first().first()
 
         assertEquals("The cumulative total must be reset.",
-            0.0, updatedExpense.accumulatedAmount, 0.01)
+            0L, updatedExpense.accumulatedAmount)
 
         assertTrue("The deadline must be later than the previous one.",
             updatedExpense.nextDeadline > initialExpense.nextDeadline)
@@ -69,7 +69,7 @@ class TimeBasedExpenseInMemoryRepositoryTest {
     @Test
     fun `updateExpenses should update the expenses list`() = runTest {
         val updatedExpense = timeBasedExpenses.first { it.id == "1" }.copy(
-            contributionToday = 15000.0,
+            contributionToday = 15000,
             lastContributionTimestamp = LocalDate.of(2026,2,27)
                 .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         )
@@ -82,5 +82,6 @@ class TimeBasedExpenseInMemoryRepositoryTest {
         assertEquals(updatedExpense, expense)
 
     }
+
 
 }

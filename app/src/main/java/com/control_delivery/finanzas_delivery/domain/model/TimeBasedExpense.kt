@@ -1,5 +1,7 @@
 package com.control_delivery.finanzas_delivery.domain.model
 
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -25,13 +27,13 @@ sealed class ExpenseFrequency {
 data class TimeBasedExpense(
     val id: String = UUID.randomUUID().toString(),
     val description: String,
-    val amount: Double,
-    val accumulatedAmount: Double = 0.0,
+    val amount: Long,
+    val accumulatedAmount: Long = 0,
     val frequency: ExpenseFrequency,
     val startTimestamp: Long,
     val isDeleted: Boolean = false,
     val nextDeadline: Long = calculateDeadline(startTimestamp, frequency),
-    val contributionToday: Double = 0.0,
+    val contributionToday: Long = 0,
     val lastContributionTimestamp: Long? = null
 ) {
     /**
@@ -39,17 +41,20 @@ data class TimeBasedExpense(
      * Ignores any contributions made during the current day to maintain
      * consistency in net balance reports.
      */
-    fun getFullDailyQuota(today: LocalDate): Double {
+    fun getFullDailyQuota(today: LocalDate): Long {
         val balancePendingAtStartOfDay = amount - (accumulatedAmount - contributionToday)
-        return balancePendingAtStartOfDay / getDaysUntilDeadline(today)
+        val daysUntilDeadline = getDaysUntilDeadline(today)
+        return BigDecimal.valueOf(balancePendingAtStartOfDay)
+            .divide(BigDecimal.valueOf(daysUntilDeadline.toLong()), 0, RoundingMode.CEILING)
+            .toLong()
     }
 
     /**
      * Calculate how much money you still need to save TODAY to reach the goal daily.
      */
-    fun getRemainingDailyQuota(today: LocalDate): Double {
-        val totalNeededToday = getDailyAmount(today)
-        return (totalNeededToday - contributionToday).coerceAtLeast(0.0)
+    fun getRemainingDailyQuota(today: LocalDate): Long {
+        val totalNeededToday = getFullDailyQuota(today)
+        return (totalNeededToday - contributionToday).coerceAtLeast(0)
     }
 
     /**
@@ -62,7 +67,7 @@ data class TimeBasedExpense(
             Instant.ofEpochMilli(it).atZone(zoneId).toLocalDate()
         }
         return if (lastDate == null || today.isAfter(lastDate)) {
-            this.copy(contributionToday = 0.0)
+            this.copy(contributionToday = 0)
         } else {
             this
         }
@@ -71,21 +76,25 @@ data class TimeBasedExpense(
     /**
      * Calculate the daily amount of the expense.
      */
-    fun getDailyAmount(today: LocalDate): Double{
-        return (amount - accumulatedAmount) / getDaysUntilDeadline(today)
+    fun getDailyAmount(today: LocalDate): Long {
+        val pendingAmount = amount - accumulatedAmount
+        val daysUntilDeadline = getDaysUntilDeadline(today)
+        return BigDecimal.valueOf(pendingAmount)
+            .divide(BigDecimal.valueOf(daysUntilDeadline.toLong()), 0, RoundingMode.CEILING)
+            .toLong()
     }
 
     /**
      * Calculate the number of days until the expense expires.
      */
     fun getDaysUntilDeadline(today: LocalDate): Int {
-        val nextDeadline = Instant.ofEpochMilli(nextDeadline)
+        val nextDeadlineDate = Instant.ofEpochMilli(nextDeadline)
             .atZone(ZoneId.systemDefault())
             .toLocalDate()
-        return if (ChronoUnit.DAYS.between(today, nextDeadline) <= 0) {
+        return if (ChronoUnit.DAYS.between(today, nextDeadlineDate) <= 0) {
             1
         } else {
-            ChronoUnit.DAYS.between(today, nextDeadline).toInt()
+            ChronoUnit.DAYS.between(today, nextDeadlineDate).toInt()
         }
     }
 
@@ -101,12 +110,13 @@ data class TimeBasedExpense(
     fun renew(today: LocalDate): TimeBasedExpense {
         if (frequency !is ExpenseFrequency.Once && isExpired(today)) {
             return this.copy(
-                contributionToday = 0.0,
-                accumulatedAmount = 0.0,
+                contributionToday = 0,
+                accumulatedAmount = 0,
                 nextDeadline=calculateDeadline(nextDeadline, frequency))
         }
         return this
     }
+
 
     companion object{
         /**

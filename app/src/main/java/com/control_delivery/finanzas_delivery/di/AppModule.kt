@@ -76,20 +76,20 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideGetOrdersNetTotalUseCase(
+    fun provideGetOrdersAmountAfterKmUseCase(
         orderRepository: OrderRepository
-    ): GetOrdersNetTotalUseCase {
-        return GetOrdersNetTotalUseCase(orderRepository)
+    ): GetOrdersAmountAfterKmUseCase {
+        return GetOrdersAmountAfterKmUseCase(orderRepository)
     }
 
     @Provides
     @Singleton
     fun provideGetAmountNetUseCase(
-        getOrdersNetTotalUseCase: GetOrdersNetTotalUseCase,
+        getOrdersAmountAfterKmUseCase: GetOrdersAmountAfterKmUseCase,
         getTotalTimeBasedExpensesImpactUseCase: GetTotalTimeBasedExpensesImpactUseCase
     ): GetAmountNetUseCase {
         return GetAmountNetUseCase(
-            getOrdersNetTotalUseCase,
+            getOrdersAmountAfterKmUseCase,
             getTotalTimeBasedExpensesImpactUseCase
         )
     }

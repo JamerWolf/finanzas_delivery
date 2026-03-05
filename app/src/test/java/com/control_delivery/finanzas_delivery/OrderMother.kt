@@ -5,7 +5,7 @@ import com.control_delivery.finanzas_delivery.domain.model.OrderStatus
 
 
 fun createOrder(platform: String,
-                amount: Double,
+                amount: Long,
                 status: OrderStatus = OrderStatus.DELIVERED): Order {
     return Order(
         platform = platform,
@@ -14,3 +14,4 @@ fun createOrder(platform: String,
         status = status
     )
 }
+

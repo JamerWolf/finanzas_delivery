@@ -30,26 +30,49 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.control_delivery.finanzas_delivery.domain.model.Order
 import com.control_delivery.finanzas_delivery.ui.add_order.AddOrderDialog
-import com.control_delivery.finanzas_delivery.ui.components.total_orders_amount.TotalOrdersAmount
-import com.control_delivery.finanzas_delivery.ui.components.total_orders_amount.TotalOrdersAmountType
+import com.control_delivery.finanzas_delivery.ui.components.total_orders_amount.OrdersTotalAmountViewModel
+import com.control_delivery.finanzas_delivery.ui.components.total_orders_amount.TotalOrdersAmountContent
+import com.control_delivery.finanzas_delivery.ui.theme.Finanzas_deliveryTheme
 import java.text.NumberFormat
 import java.util.Locale
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel = hiltViewModel(),
+    totalViewModel: OrdersTotalAmountViewModel = hiltViewModel(),
     onOrderClick: (String) -> Unit
 ) {
-    val state = viewModel.uiState
+    HomeScreenContent(
+        state = homeViewModel.uiState,
+        dailyTotal = totalViewModel.uiState.totalAmountDay,
+        weeklyTotal = totalViewModel.uiState.totalAmountWeek,
+        onAddOrderClick = { homeViewModel.onAddOrderClick() },
+        onDismissDialog = { homeViewModel.onDismissDialog() },
+        onOrderClick = onOrderClick,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun HomeScreenContent(
+    state: HomeScreenUiState,
+    dailyTotal: String,
+    weeklyTotal: String,
+    onAddOrderClick: () -> Unit,
+    onDismissDialog: () -> Unit,
+    onOrderClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         floatingActionButton = {
-            FloatingActionButton(onClick = { viewModel.onAddOrderClick() }) {
+            FloatingActionButton(onClick = onAddOrderClick) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add Order")
             }
         }
@@ -63,7 +86,8 @@ fun HomeScreen(
             Row(
                 modifier = Modifier
                     .height(100.dp)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Surface(
@@ -78,8 +102,8 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(text = "Today")
-                        TotalOrdersAmount(totalOrdersAmountType = TotalOrdersAmountType.DAILY)
+                        Text(text = "Today", style = MaterialTheme.typography.labelMedium)
+                        TotalOrdersAmountContent(amount = dailyTotal)
                     }
                 }
 
@@ -95,12 +119,12 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                     ) {
-                        Text(text = "Weekly")
-                        TotalOrdersAmount(totalOrdersAmountType = TotalOrdersAmountType.WEEKLY)
+                        Text(text = "Weekly", style = MaterialTheme.typography.labelMedium)
+                        TotalOrdersAmountContent(amount = weeklyTotal)
                     }
                 }
             }
-            // Orders Delivered Today
+
             Text(
                 text = "Orders Delivered Today",
                 modifier = Modifier
@@ -128,7 +152,7 @@ fun HomeScreen(
 
             if (state.isAddOrderDialogVisible) {
                 AddOrderDialog(
-                    onDismiss = { viewModel.onDismissDialog() }
+                    onDismiss = onDismissDialog
                 )
             }
         }
@@ -148,7 +172,6 @@ fun OrderItem(
             .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-
     ) {
         ListItem(
             headlineContent = {
@@ -188,6 +211,26 @@ fun OrderItem(
                     }
                 }
             }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenPreview() {
+    Finanzas_deliveryTheme {
+        HomeScreenContent(
+            state = HomeScreenUiState(
+                ordersDeliveredToday = listOf(
+                    Order(platform = "DIDI", customerAddress = "Calle 123", totalAmount = 5000),
+                    Order(platform = "RAPPI", customerAddress = "Av. Siempre Viva", totalAmount = 3500)
+                )
+            ),
+            dailyTotal = "$ 8.500,00",
+            weeklyTotal = "$ 45.000,00",
+            onAddOrderClick = {},
+            onDismissDialog = {},
+            onOrderClick = {}
         )
     }
 }

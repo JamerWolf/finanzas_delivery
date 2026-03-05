@@ -16,19 +16,29 @@ class ProcessOrderIncomeUseCaseTest {
     @Test
     fun `invoke should pipe amount through km filter then time filter`() = runTest {
         // 1. ARRANGE
-        val initialAmount = 100.0
-        val afterKmAmount = 90.0
-        val finalNetAmount = 70.0
+        val initialAmount = 100L
+        val afterKmAmount = 90L
+        val kmDeduction = 10L
+        val timeExpensesDeduction = 20L
+        val finalNetAmount = 70L
 
         // Mock the sequence of filtering
-        coEvery { applyKmDeduction(initialAmount) } returns afterKmAmount
-        coEvery { applyTimeBasedDeduction(afterKmAmount) } returns finalNetAmount
+        coEvery { applyKmDeduction(initialAmount) } returns KmDeductionResult(
+            amountAfterDeduction = afterKmAmount,
+            deductionAmount = kmDeduction
+        )
+        coEvery { applyTimeBasedDeduction(afterKmAmount) } returns TimeBasedExpenseResult(
+            amountAfterDeduction = finalNetAmount,
+            deductionAmount = timeExpensesDeduction
+        )
 
         // 2. ACT
         val result = useCase(initialAmount)
 
         // 3. ASSERT
-        assertEquals("The final net profit should be correct after both filters", finalNetAmount, result, 0.1)
+        assertEquals("The final net profit should be correct after both filters", finalNetAmount, result.finalNetProfit)
+        assertEquals("The km deduction should be correct", kmDeduction, result.kmDeduction)
+        assertEquals("The time expenses deduction should be correct", timeExpensesDeduction, result.timeExpensesDeduction)
         
         // Verify the exact order of execution
         coVerifyOrder {

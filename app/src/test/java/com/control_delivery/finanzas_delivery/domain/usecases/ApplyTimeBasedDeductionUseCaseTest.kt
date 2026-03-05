@@ -27,7 +27,7 @@ class ApplyTimeBasedDeductionUseCaseTest {
      * Helper to create an expense that needs exactly $10 per day.
      * With 10 days left and $100 amount, daily amount is $10.
      */
-    private fun createExpense(id: String, dailyQuota: Double = 10.0, contributionToday: Double = 0.0): TimeBasedExpense {
+    private fun createExpense(id: String, dailyQuota: Long = 10, contributionToday: Long = 0): TimeBasedExpense {
         val daysLeft = 10
         val targetAmount = dailyQuota * daysLeft
         val deadline = today.plusDays(daysLeft.toLong()).atStartOfDay(zoneId).toInstant().toEpochMilli()
@@ -36,7 +36,7 @@ class ApplyTimeBasedDeductionUseCaseTest {
             id = id,
             description = "Expense $id",
             amount = targetAmount,
-            accumulatedAmount = 0.0,
+            accumulatedAmount = 0,
             frequency = ExpenseFrequency.Daily,
             startTimestamp = today.minusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli(),
             nextDeadline = deadline,
@@ -55,7 +55,7 @@ class ApplyTimeBasedDeductionUseCaseTest {
         coEvery { repository.updateExpenses(any()) } just runs
 
         // Act: Only $10 enters.
-        val leftover = useCase(10.0, today)
+        val result = useCase(10, today)
 
         // Assert: Each should receive $5.
         val capturedList = slot<List<TimeBasedExpense>>()
@@ -64,9 +64,9 @@ class ApplyTimeBasedDeductionUseCaseTest {
         val updatedA = capturedList.captured.find { it.id == "A" }!!
         val updatedB = capturedList.captured.find { it.id == "B" }!!
         
-        assertEquals("Expense A should receive half of the pool", 5.0, updatedA.contributionToday, 0.1)
-        assertEquals("Expense B should receive half of the pool", 5.0, updatedB.contributionToday, 0.1)
-        assertEquals("All money should be used", 0.0, leftover, 0.1)
+        assertEquals("Expense A should receive half of the pool", 5L, updatedA.contributionToday)
+        assertEquals("Expense B should receive half of the pool", 5L, updatedB.contributionToday)
+        assertEquals("All money should be used", 0L, result.amountAfterDeduction)
     }
 
     @Test
@@ -79,7 +79,7 @@ class ApplyTimeBasedDeductionUseCaseTest {
         coEvery { repository.updateExpenses(any()) } just runs
 
         // Act: $50 enters.
-        val leftover = useCase(50.0, today)
+        val result = useCase(50, today)
 
         // Assert: Both should be filled ($10 each), $30 leftover.
         val capturedList = slot<List<TimeBasedExpense>>()
@@ -88,9 +88,9 @@ class ApplyTimeBasedDeductionUseCaseTest {
         val updatedA = capturedList.captured.find { it.id == "A" }!!
         val updatedB = capturedList.captured.find { it.id == "B" }!!
         
-        assertEquals(10.0, updatedA.contributionToday, 0.1)
-        assertEquals(10.0, updatedB.contributionToday, 0.1)
-        assertEquals("Profit should be 50 - 20 = 30", 30.0, leftover, 0.1)
+        assertEquals(10L, updatedA.contributionToday)
+        assertEquals(10L, updatedB.contributionToday)
+        assertEquals("Profit should be 50 - 20 = 30", 30L, result.amountAfterDeduction)
     }
 
     @Test
@@ -100,14 +100,14 @@ class ApplyTimeBasedDeductionUseCaseTest {
         // Expense B needs $10 today.
         // Fair share for $10 pool would be $5 each. 
         // But A only takes $2, so B should get $5 + $3 = $8.
-        val expenseA = createExpense("A", dailyQuota = 2.0)
-        val expenseB = createExpense("B", dailyQuota = 10.0)
+        val expenseA = createExpense("A", dailyQuota = 2)
+        val expenseB = createExpense("B", dailyQuota = 10)
         
         coEvery { repository.getAllExpenses() } returns flowOf(listOf(expenseA, expenseB))
         coEvery { repository.updateExpenses(any()) } just runs
 
         // Act: $10 enters.
-        val leftover = useCase(10.0, today)
+        val result = useCase(10, today)
 
         // Assert
         val capturedList = slot<List<TimeBasedExpense>>()
@@ -116,25 +116,25 @@ class ApplyTimeBasedDeductionUseCaseTest {
         val updatedA = capturedList.captured.find { it.id == "A" }!!
         val updatedB = capturedList.captured.find { it.id == "B" }!!
         
-        assertEquals(2.0, updatedA.contributionToday, 0.1)
-        assertEquals(8.0, updatedB.contributionToday, 0.1)
-        assertEquals(0.0, leftover, 0.1)
+        assertEquals(2L, updatedA.contributionToday)
+        assertEquals(8L, updatedB.contributionToday)
+        assertEquals(0L, result.amountAfterDeduction)
     }
 
     @Test
     fun `should return all amount when all expenses are already covered for today`() = runTest {
         // Arrange: 2 expenses already have their $10 contribution today.
-        val expenseA = createExpense("A", dailyQuota = 10.0, contributionToday = 10.0)
-        val expenseB = createExpense("B", dailyQuota = 10.0, contributionToday = 10.0)
+        val expenseA = createExpense("A", dailyQuota = 10, contributionToday = 10)
+        val expenseB = createExpense("B", dailyQuota = 10, contributionToday = 10)
         
         coEvery { repository.getAllExpenses() } returns flowOf(listOf(expenseA, expenseB))
         coEvery { repository.updateExpenses(any()) } just runs
 
         // Act: $50 enters.
-        val leftover = useCase(50.0, today)
+        val result = useCase(50, today)
 
         // Assert: No changes to expenses, all money remains in pool.
         coVerify { repository.updateExpenses(any()) }
-        assertEquals(50.0, leftover, 0.1)
+        assertEquals(50L, result.amountAfterDeduction)
     }
 }

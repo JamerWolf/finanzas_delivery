@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.control_delivery.finanzas_delivery.domain.model.TimeBasedExpense
 import com.control_delivery.finanzas_delivery.domain.usecases.GetTimeBasedExpenseByIdUseCase
-import com.control_delivery.finanzas_delivery.ui.expenses.time_based.TimeBasedExpensesViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -47,8 +46,18 @@ class TimeBasedExpenseItemViewModel @Inject constructor(
         val deadlineDate = Instant.ofEpochMilli(expense.nextDeadline).atZone(zoneId).toLocalDate()
         val daysLeft = ChronoUnit.DAYS.between(today, deadlineDate).coerceAtLeast(0)
 
-        val progressValue = (expense.accumulatedAmount / expense.amount).toFloat().coerceIn(0f, 1f)
-        val currencyFormat = NumberFormat.getCurrencyInstance(Locale.GERMANY)
+        val progressGeneralValue = if (expense.amount > 0) {
+            (expense.accumulatedAmount.toFloat() / expense.amount.toFloat()).coerceIn(0f, 1f)
+        } else 0f
+
+        val dailyQuota = expense.getFullDailyQuota(today)
+        val progressDailyValue = if (dailyQuota > 0) {
+            (expense.contributionToday.toFloat() / dailyQuota.toFloat()).coerceIn(0f, 1f)
+        } else 0f
+
+        val currencyFormat = NumberFormat.getCurrencyInstance(Locale.GERMANY).apply {
+            maximumFractionDigits = 0
+        }
 
         state = TimeBasedExpenseItemUiState(
             id = expense.id,
@@ -56,10 +65,14 @@ class TimeBasedExpenseItemViewModel @Inject constructor(
             daysLeftText = if (daysLeft > 0) "In $daysLeft days" else "¡Today!",
             // Using a darker green for better contrast in Light mode
             daysLeftColor = if (daysLeft <= 1) Color.Red else Color(0xFF2E7D32),
-            progress = progressValue,
-            progressText = "${(progressValue * 100).toInt()}%",
+            generalProgress = progressGeneralValue,
+            generalProgressText = "${(progressGeneralValue * 100).toInt()}%",
             savedAmountText = "Saved: ${currencyFormat.format(expense.accumulatedAmount)}",
-            goalAmountText = "Goal: ${currencyFormat.format(expense.amount)}"
+            generalGoalAmountText = "Goal: ${currencyFormat.format(expense.amount)}",
+            dailyProgress = progressDailyValue,
+            dailyProgressText = "${(progressDailyValue * 100).toInt()}%",
+            dailyGoalAmountText = "Goal: ${currencyFormat.format(expense.getDailyAmount(today))}",
+            savedToday = "Saved: ${currencyFormat.format(expense.contributionToday)}"
         )
     }
 }

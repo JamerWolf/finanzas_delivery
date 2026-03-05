@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.control_delivery.finanzas_delivery.domain.usecases.GetOrderByIdUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
@@ -24,7 +23,10 @@ class OrderDetailViewModel @Inject constructor(
         viewModelScope.launch {
             getOrderByIdUseCase(orderId).collect { order ->
                 if (order != null) {
-                    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.GERMANY)
+                    val currencyFormat = NumberFormat.getCurrencyInstance(Locale.GERMANY).apply {
+                        maximumFractionDigits = 0
+                    }
+
                     val dateFormat = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")
                     uiState = uiState.copy(
                         platform = order.platform.uppercase(),

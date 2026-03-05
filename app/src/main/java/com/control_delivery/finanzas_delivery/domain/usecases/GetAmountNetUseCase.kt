@@ -2,10 +2,9 @@ package com.control_delivery.finanzas_delivery.domain.usecases
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import timber.log.Timber
 
 class GetAmountNetUseCase(
-    private val getOrdersNetTotalUseCase: GetOrdersNetTotalUseCase,
+    private val getOrdersAmountAfterKmUseCase: GetOrdersAmountAfterKmUseCase,
     private val getTotalTimeBasedExpensesImpactUseCase: GetTotalTimeBasedExpensesImpactUseCase
 ) {
     /**
@@ -14,12 +13,12 @@ class GetAmountNetUseCase(
      * @param endDate The end date of the date range.
      * @return A Flow emitting the net amount.
      */
-    operator fun invoke(startDate: Long, endDate: Long): Flow<Double> {
+    operator fun invoke(startDate: Long, endDate: Long): Flow<Long> {
         return combine(
-            getOrdersNetTotalUseCase(startDate, endDate),
+            getOrdersAmountAfterKmUseCase(startDate, endDate),
             getTotalTimeBasedExpensesImpactUseCase(startDate, endDate)
-        ) { netIncomeFromOrders, expensesImpact ->
-            netIncomeFromOrders - expensesImpact
+        ) { amountAfterKm, totalExpensesImpactDaily ->
+           amountAfterKm - totalExpensesImpactDaily
         }
     }
 }

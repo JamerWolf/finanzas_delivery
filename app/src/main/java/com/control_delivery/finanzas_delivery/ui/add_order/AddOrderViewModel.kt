@@ -37,7 +37,7 @@ class AddOrderViewModel @Inject constructor(
         viewModelScope.launch {
             uiState = uiState.copy(isSaving = true)
 
-            val amount = uiState.amount.toDoubleOrNull() ?: 0.0
+            val amount = uiState.amount.toDoubleOrNull()?.toLong() ?: 0L
             val processingResult = processOrderIncomeUseCase(amount)
 
             val newOrder = Order(

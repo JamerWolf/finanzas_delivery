@@ -24,6 +24,10 @@ class OrdersTotalAmountViewModel @Inject constructor(
     var uiState by mutableStateOf(TotalOrdersUiState())
         private set
 
+    private val currencyFormat = NumberFormat.getCurrencyInstance(Locale.GERMANY).apply {
+        maximumFractionDigits = 0
+    }
+
     init {
         viewModelScope.launch {
             syncTimeBasedExpensesUseCase()
@@ -33,7 +37,7 @@ class OrdersTotalAmountViewModel @Inject constructor(
                 val (start, end) = DateUtils.getTimestampRange("THIS_WEEK")
                 getAmountNetUseCase(start, end).collect { weeklyNet ->
                     uiState = uiState.copy(
-                        totalAmountWeek = NumberFormat.getCurrencyInstance(Locale.GERMANY).format(weeklyNet)
+                        totalAmountWeek = currencyFormat.format(weeklyNet)
                     )
                 }
             }
@@ -42,9 +46,9 @@ class OrdersTotalAmountViewModel @Inject constructor(
             launch {
                 val (start, end) = DateUtils.getTimestampRange("TODAY")
                 getAmountNetUseCase(start, end).collect { total ->
-                    Timber.d("Net amount: $total")
+                    Timber.d("Total: $total")
                     uiState = uiState.copy(
-                        totalAmountDay = NumberFormat.getCurrencyInstance(Locale.GERMANY).format(total)
+                        totalAmountDay = currencyFormat.format(total)
                     )
                 }
             }

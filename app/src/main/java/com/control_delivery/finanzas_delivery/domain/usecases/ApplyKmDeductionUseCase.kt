@@ -1,9 +1,16 @@
 package com.control_delivery.finanzas_delivery.domain.usecases
 
+import java.math.BigDecimal
+import java.math.RoundingMode
+
 class ApplyKmDeductionUseCase {
-    operator fun invoke(amount: Double): KmDeductionResult {
+    operator fun invoke(amount: Long): KmDeductionResult {
         //TODO: Not implemented yet, value symbolic
-        val deductionAmount = (amount * 0.1)
+        val deductionAmount = BigDecimal.valueOf(amount)
+            .multiply(BigDecimal.valueOf(0.1))
+            .setScale(0, RoundingMode.CEILING)
+            .toLong()
+        
         return KmDeductionResult(
             amountAfterDeduction = amount - deductionAmount,
             deductionAmount = deductionAmount
@@ -15,6 +22,6 @@ class ApplyKmDeductionUseCase {
  * Represents the result of applying the mileage filter.
  */
 data class KmDeductionResult(
-    val amountAfterDeduction: Double,
-    val deductionAmount: Double
+    val amountAfterDeduction: Long,
+    val deductionAmount: Long
 )

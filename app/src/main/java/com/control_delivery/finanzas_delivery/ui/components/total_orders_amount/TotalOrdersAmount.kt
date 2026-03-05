@@ -11,14 +11,27 @@ import com.control_delivery.finanzas_delivery.ui.theme.Finanzas_deliveryTheme
 fun TotalOrdersAmount(
     modifier: Modifier = Modifier,
     totalOrdersAmountViewModel: OrdersTotalAmountViewModel = hiltViewModel(),
-    totalOrdersAmountType : TotalOrdersAmountType
-    ) {
+    totalOrdersAmountType: TotalOrdersAmountType
+) {
     val state = totalOrdersAmountViewModel.uiState
+    val amount = when (totalOrdersAmountType) {
+        TotalOrdersAmountType.DAILY -> state.totalAmountDay
+        TotalOrdersAmountType.WEEKLY -> state.totalAmountWeek
+    }
 
+    TotalOrdersAmountContent(
+        amount = amount,
+        modifier = modifier
+    )
+}
+
+@Composable
+fun TotalOrdersAmountContent(
+    amount: String,
+    modifier: Modifier = Modifier
+) {
     Text(
-        text = when (totalOrdersAmountType) {
-            TotalOrdersAmountType.DAILY -> state.totalAmountDay
-            TotalOrdersAmountType.WEEKLY -> state.totalAmountWeek },
+        text = amount,
         modifier = modifier,
     )
 }
@@ -27,7 +40,7 @@ fun TotalOrdersAmount(
 @Composable
 fun TotalOrdersAmountPreview() {
     Finanzas_deliveryTheme {
-        TotalOrdersAmount(totalOrdersAmountType = TotalOrdersAmountType.DAILY)
+        TotalOrdersAmountContent(amount = "$ 10.000,00")
     }
 }
 

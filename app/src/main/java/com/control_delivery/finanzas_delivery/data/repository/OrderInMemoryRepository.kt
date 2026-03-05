@@ -29,11 +29,11 @@ class OrderInMemoryRepository (
         return addOrder.id
     }
 
-    override fun getOrdersTotalAmount(): Flow<Double> {
+    override fun getOrdersTotalAmount(): Flow<Long> {
         return _ordersFlow.map { orderI.getOrdersTotalAmount() }
     }
 
-    override fun getOrdersTotalAmount(startDate: Long, endDate: Long): Flow<Double> {
+    override fun getOrdersTotalAmount(startDate: Long, endDate: Long): Flow<Long> {
         return _ordersFlow.map { orderI.getOrdersTotalAmount(startDate, endDate) }
     }
 
@@ -46,11 +46,10 @@ class OrderInMemoryRepository (
         }
     }
 
-    override fun getOrdersNetTotal(startDate: Long, endDate: Long): Flow<Double> {
+    override fun getOrdersAmountAfterKm(startDate: Long, endDate: Long): Flow<Long> {
         return _ordersFlow.map { orders ->
             orders.filter { it.status == OrderStatus.DELIVERED && it.timestamp in startDate..endDate }
-                .sumOf { it.netAmount }
+                .sumOf { it.amountAfterKmDeduction }
         }
     }
-
 }

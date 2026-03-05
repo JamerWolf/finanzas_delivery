@@ -11,10 +11,10 @@ class OrderInMemoryRepositoryTest {
     @Test
     fun `should return only orders with matching status`() = runTest {
        val orders = Orders(mutableListOf(
-            createOrder("DIDI",10.0),
-            createOrder("UBER",20.0),
-            createOrder("DIDI",30.0, OrderStatus.ON_THE_WAY_TO_DELIVERY),
-            createOrder("UBER",40.0, OrderStatus.CANCELLED)
+            createOrder("DIDI",10),
+            createOrder("UBER",20),
+            createOrder("DIDI",30, OrderStatus.ON_THE_WAY_TO_DELIVERY),
+            createOrder("UBER",40, OrderStatus.CANCELLED)
         ))
 
         val repository = OrderInMemoryRepository(orders)
@@ -26,16 +26,17 @@ class OrderInMemoryRepositoryTest {
     @Test
     fun `should add order to store`() = runTest {
         val orders = Orders(mutableListOf(
-            createOrder("DIDI",10.0)
+            createOrder("DIDI",10)
         ))
 
         val repository = OrderInMemoryRepository(orders)
 
-        val order = createOrder("UBER",20.0)
+        val order = createOrder("UBER",20)
         repository.addOrder(order)
 
         assertEquals(2, orders.orders.size)
         assertEquals(order, orders.orders.last())
     }
+
 
 }

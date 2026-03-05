@@ -11,8 +11,12 @@ data class TimeBasedExpenseItemUiState(
     val description: String = "",
     val daysLeftText: String = "",
     val daysLeftColor: Color = Color.Black,
-    val progress: Float = 0.0F,
-    val progressText: String = "",
+    val generalProgress: Float = 0.0F,
+    val generalProgressText: String = "",
+    val dailyProgress: Float = 0.0F,
+    val dailyProgressText: String = "",
     val savedAmountText: String = "",
-    val goalAmountText: String = ""
+    val generalGoalAmountText: String = "",
+    val dailyGoalAmountText: String = "",
+    val savedToday : String = ""
 )

@@ -14,14 +14,14 @@ class GetOrdersTotalAmountUseCase (
         /**
          * Returns a flow of the total amount of orders
          */
-        operator fun invoke(): Flow<Double> {
+        operator fun invoke(): Flow<Long> {
             return orderRepository.getOrdersTotalAmount()
         }
 
         /**
          * Returns a flow of the total amount of orders in a date range
          */
-        operator fun invoke(startDate: Long, endDate: Long): Flow<Double> {
+        operator fun invoke(startDate: Long, endDate: Long): Flow<Long> {
             return orderRepository.getOrdersTotalAmount(startDate, endDate)
         }
     }

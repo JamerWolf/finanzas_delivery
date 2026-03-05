@@ -3,9 +3,9 @@ package com.control_delivery.finanzas_delivery.domain.usecases
 import timber.log.Timber
 
 data class OrderProcessingResult(
-    val kmDeduction: Double,
-    val timeExpensesDeduction: Double,
-    val finalNetProfit: Double
+    val kmDeduction: Long,
+    val timeExpensesDeduction: Long,
+    val finalNetProfit: Long
 )
 
 /**
@@ -20,7 +20,7 @@ class ProcessOrderIncomeUseCase (
      * @param orderAmount The amount of the order.
      * @return The result of each filter.
      */
-    suspend operator fun invoke(orderAmount: Double): OrderProcessingResult {
+    suspend operator fun invoke(orderAmount: Long): OrderProcessingResult {
         val kmResult = applyKmDeduction(orderAmount)
         val finalNet = applyTimeBasedDeduction(kmResult.amountAfterDeduction)
 
