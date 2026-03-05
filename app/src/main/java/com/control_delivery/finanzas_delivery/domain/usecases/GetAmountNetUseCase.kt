@@ -19,8 +19,6 @@ class GetAmountNetUseCase(
             getOrdersNetTotalUseCase(startDate, endDate),
             getTotalTimeBasedExpensesImpactUseCase(startDate, endDate)
         ) { netIncomeFromOrders, expensesImpact ->
-            Timber.d("Net income from orders: $netIncomeFromOrders")
-            Timber.d("Expenses impact: $expensesImpact")
             netIncomeFromOrders - expensesImpact
         }
     }

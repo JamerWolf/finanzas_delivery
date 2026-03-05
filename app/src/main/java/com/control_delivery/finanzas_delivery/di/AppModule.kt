@@ -68,6 +68,14 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideGetOrderByIdUseCase(
+        orderRepository: OrderRepository
+    ): GetOrderByIdUseCase {
+        return GetOrderByIdUseCase(orderRepository)
+    }
+
+    @Provides
+    @Singleton
     fun provideGetOrdersNetTotalUseCase(
         orderRepository: OrderRepository
     ): GetOrdersNetTotalUseCase {
@@ -89,12 +97,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAddOrderUseCase(
-        orderRepository: OrderRepository,
-        timeBasedExpenseRepository: TimeBasedExpenseRepository
+        orderRepository: OrderRepository
     ): AddOrderUseCase {
         return AddOrderUseCase(
-            orderRepository,
-            timeBasedExpenseRepository
+            orderRepository
         )
     }
 

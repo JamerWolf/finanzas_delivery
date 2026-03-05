@@ -39,18 +39,17 @@ class AddOrderViewModel @Inject constructor(
 
             val amount = uiState.amount.toDoubleOrNull() ?: 0.0
             val processingResult = processOrderIncomeUseCase(amount)
-            Timber.d("Final net amount: $processingResult")
 
             val newOrder = Order(
                 platform = uiState.platform,
                 customerAddress = uiState.address,
                 totalAmount = amount,
-                kmDeduction = processingResult.kmDeduction ,
+                kmDeduction = processingResult.kmDeduction,
+                timeExpensesDeduction = processingResult.timeExpensesDeduction,
                 status = OrderStatus.DELIVERED
             )
             
             addOrderUseCase(newOrder)
-            Timber.d("Order saved: $newOrder")
             
             uiState = uiState.copy(isSaving = false)
             onSuccess()

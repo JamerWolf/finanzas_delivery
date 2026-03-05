@@ -13,24 +13,12 @@ data class Order(
     val status: OrderStatus = OrderStatus.ON_THE_WAY_TO_RECEIVE,
     val timestamp: Long = System.currentTimeMillis(),
     val kmDeduction: Double = 0.0,
-    val netAmount: Double = totalAmount - kmDeduction,
+    val timeExpensesDeduction: Double = 0.0,
+    val netAmount: Double = totalAmount - (kmDeduction + timeExpensesDeduction),
     val isDeleted: Boolean = false
 ) {
     init {
         require(totalAmount >= 0.0) { "Total amount cannot be negative" }
-    }
-
-    override fun toString(): String {
-        return """
-            Order(
-                id='$id',
-                platform='$platform',
-                customerAddress='$customerAddress',
-                totalAmount=$totalAmount,
-                status=$status,
-                isDeleted=$isDeleted
-            )
-        """.trimIndent()
     }
 
     fun toLocalDate(): LocalDate {

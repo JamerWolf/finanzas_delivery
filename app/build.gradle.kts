@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.hilt.android)
     implementation(libs.timber)
+    implementation(libs.androidx.material3)
     ksp(libs.hilt.compiler)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)

@@ -13,6 +13,10 @@ class OrderInMemoryRepository (
 ): OrderRepository {
     private val _ordersFlow = MutableStateFlow(orderI.orders.toList())
 
+    override fun getOrderById(id: String): Flow<Order?> {
+        return _ordersFlow.map { orders -> orders.find { it.id == id } }
+    }
+
     override fun getOrdersFlow(): Flow<List<Order>> = _ordersFlow.asStateFlow()
 
     override fun getOrdersByStates(status: List<OrderStatus>): Flow<List<Order>> {

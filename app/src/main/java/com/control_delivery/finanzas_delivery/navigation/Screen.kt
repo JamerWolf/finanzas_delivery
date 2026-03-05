@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 sealed class Screen(
     val route: String,
     val title: String,
-    val icon: ImageVector
+    val icon: ImageVector,
 ) {
     // Home Screen
     object Home : Screen(
@@ -25,4 +25,16 @@ sealed class Screen(
         title = "Expenses",
         icon = Icons.Default.Wallet
     )
+
+    // Order Details Screen (Does not appear in the BottomBar)
+    object OrderDetail : Screen(
+        route = "order_detail/{orderId}",
+        title = "Order Details",
+        icon = Icons.Default.Home
+    ) {
+        /**
+         * Auxiliary function to generate the actual route by injecting the ID.
+         */
+        fun createRoute(orderId: String): String = "order_detail/$orderId"
+    }
 }

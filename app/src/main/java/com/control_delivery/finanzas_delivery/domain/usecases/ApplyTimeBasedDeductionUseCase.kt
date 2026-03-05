@@ -12,10 +12,11 @@ import kotlin.math.min
 class ApplyTimeBasedDeductionUseCase(
     private val repository: TimeBasedExpenseRepository
 ) {
-    suspend operator fun invoke(amount: Double, today: LocalDate = LocalDate.now()): Double {
-        var pool = amount
+    suspend operator fun invoke(amount: Double, today: LocalDate = LocalDate.now()): TimeBasedExpenseResult {
+        var pool = amount // pool of available money to be distributed among daily goals.
         val allExpenses = repository.getAllExpenses().first()
-        //TODO: create a single method to reset the daily contribution and all expenses
+        // TODO: Refactor, What the hell? I don't understand a damn thing.
+        // TODO: create a single method to reset the daily contribution and all expenses
         var expensesToUpdate = allExpenses.map {
             it.syncDailyContribution(today).renew(today)
         }
@@ -54,6 +55,13 @@ class ApplyTimeBasedDeductionUseCase(
 
         repository.updateExpenses(expensesToUpdate)
 
-        return pool
+        return TimeBasedExpenseResult(
+            amountAfterDeduction = pool,
+            deductionAmount = amount - pool
+        )
     }
 }
+data class TimeBasedExpenseResult(
+    val amountAfterDeduction: Double,
+    val deductionAmount: Double
+)

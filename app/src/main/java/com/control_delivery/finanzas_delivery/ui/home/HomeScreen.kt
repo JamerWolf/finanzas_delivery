@@ -1,5 +1,6 @@
 package com.control_delivery.finanzas_delivery.ui.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,6 +43,7 @@ import java.util.Locale
 fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel(),
+    onOrderClick: (String) -> Unit
 ) {
     val state = viewModel.uiState
     Scaffold(
@@ -57,6 +59,7 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
+            // Header (Totals)
             Row(
                 modifier = Modifier
                     .height(100.dp)
@@ -97,7 +100,7 @@ fun HomeScreen(
                     }
                 }
             }
-
+            // Orders Delivered Today
             Text(
                 text = "Orders Delivered Today",
                 modifier = Modifier
@@ -115,8 +118,11 @@ fun HomeScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                items(state.ordersDeliveredToday) { order ->
-                    OrderItem(order = order)
+                items(state.ordersDeliveredToday, key = { it.id }) { order ->
+                    OrderItem(
+                        order = order,
+                        onClick = { onOrderClick(order.id) }
+                    )
                 }
             }
 
@@ -132,13 +138,17 @@ fun HomeScreen(
 @Composable
 fun OrderItem(
     order: Order,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
-    val formattedAmount = NumberFormat.getNumberInstance(Locale.GERMANY).format(order.totalAmount)
+    val formattedAmount = NumberFormat.getNumberInstance(Locale.GERMANY).format(order.netAmount)
 
     ElevatedCard(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp)
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+
     ) {
         ListItem(
             headlineContent = {
