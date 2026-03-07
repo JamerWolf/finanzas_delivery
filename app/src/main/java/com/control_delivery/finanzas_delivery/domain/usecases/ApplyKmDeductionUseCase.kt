@@ -5,7 +5,6 @@ import java.math.RoundingMode
 
 class ApplyKmDeductionUseCase {
     operator fun invoke(amount: Long): KmDeductionResult {
-        //TODO: Not implemented yet, value symbolic
         val deductionAmount = BigDecimal.valueOf(amount)
             .multiply(BigDecimal.valueOf(0.1))
             .setScale(0, RoundingMode.CEILING)

@@ -1,8 +1,7 @@
 package com.control_delivery.finanzas_delivery.ui.order_detail
 
-import com.control_delivery.finanzas_delivery.domain.model.Order
-
 data class OrderDetailUiState(
+
     val platform: String = "",
     val address: String = "",
     val km: String = "",

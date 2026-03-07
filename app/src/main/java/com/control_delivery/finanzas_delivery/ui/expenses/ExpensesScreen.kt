@@ -20,11 +20,12 @@ fun ExpensesScreen() {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
-            FloatingActionButton(onClick = { /* TODO: Creation dialogue */ }) {
+            FloatingActionButton(onClick = { }) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add Expense")
             }
         }
     ) { innerPadding ->
+
         Column(
             modifier = Modifier
                 .padding(innerPadding)

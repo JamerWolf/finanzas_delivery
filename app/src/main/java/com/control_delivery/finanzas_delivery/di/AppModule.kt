@@ -60,14 +60,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideGetOrdersTotalAmountUseCase(
-        orderRepository: OrderRepository
-    ): GetOrdersTotalAmountUseCase {
-        return GetOrdersTotalAmountUseCase(orderRepository)
-    }
-
-    @Provides
-    @Singleton
     fun provideGetOrderByIdUseCase(
         orderRepository: OrderRepository
     ): GetOrderByIdUseCase {

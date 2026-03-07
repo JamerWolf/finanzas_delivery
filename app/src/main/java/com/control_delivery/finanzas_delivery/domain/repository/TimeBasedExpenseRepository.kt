@@ -9,11 +9,6 @@ interface TimeBasedExpenseRepository {
      * Get a flow of all the expenses.
      */
     fun getAllExpenses(): Flow<List<TimeBasedExpense>>
-    /**
-     * Get a flow of all the today expenses.
-     * @param today The date to check.
-     */
-    fun getDailyAmountExpenses(today: LocalDate = LocalDate.now()): Flow<Long>
 
     /**
      * Get a flow of a specific expense by its ID.

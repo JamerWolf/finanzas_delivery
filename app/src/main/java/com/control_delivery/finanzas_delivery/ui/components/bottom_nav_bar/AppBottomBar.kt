@@ -1,4 +1,5 @@
-package com.control_delivery.finanzas_delivery.ui.components.botton_nav_bar
+package com.control_delivery.finanzas_delivery.ui.components.bottom_nav_bar
+
 
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar

@@ -11,7 +11,6 @@ import com.control_delivery.finanzas_delivery.domain.usecases.AddOrderUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.ProcessOrderIncomeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel

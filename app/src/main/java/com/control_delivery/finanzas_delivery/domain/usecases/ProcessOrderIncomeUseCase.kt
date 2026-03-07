@@ -1,8 +1,7 @@
 package com.control_delivery.finanzas_delivery.domain.usecases
 
-import timber.log.Timber
-
 data class OrderProcessingResult(
+
     val kmDeduction: Long,
     val timeExpensesDeduction: Long,
     val finalNetProfit: Long

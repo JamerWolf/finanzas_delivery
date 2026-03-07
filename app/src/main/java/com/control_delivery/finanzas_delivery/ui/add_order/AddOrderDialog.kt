@@ -21,7 +21,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
-import timber.log.Timber
 
 @Composable
 fun AddOrderDialog (
@@ -76,8 +75,6 @@ fun AddOrderDialog (
                         onClick = { viewModel.saveOrder(onSuccess = onDismiss) },
                         enabled = uiState.isFormValid && !uiState.isSaving
                     ) {
-                        Timber.d("state: isValid:${uiState.isFormValid} isSaving: ${uiState.isSaving}")
-                        Timber.d("uiState: $uiState")
                         if (uiState.isSaving) CircularProgressIndicator()
                         else Text("Confirm")
                     }

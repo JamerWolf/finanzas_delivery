@@ -17,25 +17,16 @@ class OrderInMemoryRepository (
         return _ordersFlow.map { orders -> orders.find { it.id == id } }
     }
 
-    override fun getOrdersFlow(): Flow<List<Order>> = _ordersFlow.asStateFlow()
-
-    override fun getOrdersByStates(status: List<OrderStatus>): Flow<List<Order>> {
-        return _ordersFlow.map { orders -> orders.filter { status.contains(it.status) } }
-    }
-
     override suspend fun addOrder(order: Order): String {
         val addOrder = orderI.addOrder(order)
         _ordersFlow.value = orderI.orders.toList()
         return addOrder.id
     }
 
-    override fun getOrdersTotalAmount(): Flow<Long> {
-        return _ordersFlow.map { orderI.getOrdersTotalAmount() }
-    }
-
     override fun getOrdersTotalAmount(startDate: Long, endDate: Long): Flow<Long> {
         return _ordersFlow.map { orderI.getOrdersTotalAmount(startDate, endDate) }
     }
+
 
     override fun getOrdersByStatesInDateRange(
         status: List<OrderStatus>,

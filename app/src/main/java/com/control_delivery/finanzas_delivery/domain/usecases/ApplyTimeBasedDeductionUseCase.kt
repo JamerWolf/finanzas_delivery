@@ -18,6 +18,7 @@ class ApplyTimeBasedDeductionUseCase(
         val allExpenses = repository.getAllExpenses().first()
         
         var expensesToUpdate = allExpenses.map {
+
             it.syncDailyContribution(today).renew(today)
         }
 

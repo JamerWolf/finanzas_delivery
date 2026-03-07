@@ -8,7 +8,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 
-// TODO
 @Composable
 fun DistanceExpensesScreen(
     viewModel: DistanceExpensesViewModel = hiltViewModel()
@@ -18,6 +17,6 @@ fun DistanceExpensesScreen(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = "Coming soon: Mileage Expenses (Gasoline, Oil, etc.))")
+        Text(text = "Coming soon: Mileage Expenses (Gasoline, Oil, etc.)")
     }
 }

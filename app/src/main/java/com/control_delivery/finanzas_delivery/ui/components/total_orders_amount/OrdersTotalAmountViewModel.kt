@@ -6,7 +6,6 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.control_delivery.finanzas_delivery.domain.usecases.GetAmountNetUseCase
-import com.control_delivery.finanzas_delivery.domain.usecases.GetOrdersTotalAmountUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.SyncTimeBasedExpensesUseCase
 import com.control_delivery.finanzas_delivery.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel

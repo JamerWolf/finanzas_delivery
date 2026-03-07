@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.control_delivery.finanzas_delivery.ui.components.botton_nav_bar.AppBottomBar
+import com.control_delivery.finanzas_delivery.ui.components.bottom_nav_bar.AppBottomBar
 import com.control_delivery.finanzas_delivery.ui.theme.Finanzas_deliveryTheme
 import dagger.hilt.android.AndroidEntryPoint
 

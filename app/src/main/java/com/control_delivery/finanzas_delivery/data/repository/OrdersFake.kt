@@ -56,11 +56,6 @@ data class Orders(var orders: MutableList<Order> = mutableListOf(
         }
     }
 
-    fun getOrdersTotalAmount(): Long {
-        return orders.filter {
-            it.status == OrderStatus.DELIVERED }.sumOf { it.totalAmount }
-    }
-
     fun getOrdersTotalAmount(startDate: Long, endDate: Long): Long {
         return orders.filter {
             it.status == OrderStatus.DELIVERED && it.timestamp in startDate..endDate}
