@@ -16,11 +16,16 @@ data class Order(
     val timeExpensesDeduction: Long = 0,
     val amountAfterKmDeduction: Long = totalAmount - kmDeduction,
     val netAmount: Long = totalAmount - (kmDeduction + timeExpensesDeduction),
-    val isDeleted: Boolean = false
+    val kmDeductionsBreakdown: Map<String, Long> = emptyMap(),
+    val timeExpensesDeductionsBreakdown: Map<String, Long> = emptyMap(),
+    val isDeleted: Boolean = false,
+    val distances: List<DistanceType> = emptyList()
 ) {
     init {
         require(totalAmount >= 0) { "Total amount cannot be negative" }
     }
+
+    fun getTotalDistance(): Double = distances.sumOf { it.value }
 
     fun toLocalDate(): LocalDate {
         return Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()

@@ -11,6 +11,9 @@ public interface OrderRepository {
     fun getOrdersByStatesInDateRange(status: List<OrderStatus>,
                                      startDate: Long, endDate: Long): Flow<List<Order>>
     fun getOrdersAmountAfterKm(startDate: Long, endDate: Long): Flow<Long>
+    suspend fun deleteOrder(id: String)
+    suspend fun updateOrder(order: Order)
 }
+
 
 

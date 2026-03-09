@@ -1,18 +1,53 @@
 package com.control_delivery.finanzas_delivery.domain.usecases
 
-import java.math.BigDecimal
-import java.math.RoundingMode
+import com.control_delivery.finanzas_delivery.domain.model.DistanceExpenseType
+import com.control_delivery.finanzas_delivery.domain.model.DistanceType
+import com.control_delivery.finanzas_delivery.domain.repository.DistanceBasedExpenseRepository
+import kotlinx.coroutines.flow.first
 
-class ApplyKmDeductionUseCase {
-    operator fun invoke(amount: Long): KmDeductionResult {
-        val deductionAmount = BigDecimal.valueOf(amount)
-            .multiply(BigDecimal.valueOf(0.1))
-            .setScale(0, RoundingMode.CEILING)
-            .toLong()
-        
+class ApplyKmDeductionUseCase(
+    private val repository: DistanceBasedExpenseRepository
+) {
+    suspend operator fun invoke(amount: Long, distances: List<DistanceType>): KmDeductionResult {
+        val allExpenses = repository.getDistanceBasedExpenses().first()
+        val breakdown = mutableMapOf<String, Long>()
+        var totalDeduction = 0L
+
+        val updatedExpenses = allExpenses.map { expense ->
+            // Filter trayectos that apply to this expense
+            val relevantKm = distances.filter { distance ->
+                expense.appliedTo.any { it.isInstance(distance) }
+            }.sumOf { it.value }
+            
+            if (relevantKm > 0) {
+                val deductionForThisItem = (relevantKm * expense.costPerKm).toLong()
+                
+                totalDeduction += deductionForThisItem
+                breakdown[expense.description] = deductionForThisItem
+
+                // If it's a savings goal, we update accumulated values
+                if (expense.type is DistanceExpenseType.SavingsGoal) {
+                    expense.copy(
+                        type = expense.type.copy(
+                            accumulatedAmount = expense.type.accumulatedAmount + deductionForThisItem,
+                            accumulatedKm = expense.type.accumulatedKm + relevantKm
+                        )
+                    )
+                } else {
+                    expense
+                }
+            } else {
+                expense
+            }
+        }
+
+        // Save changes in batch
+        repository.updateExpenses(updatedExpenses)
+
         return KmDeductionResult(
-            amountAfterDeduction = amount - deductionAmount,
-            deductionAmount = deductionAmount
+            amountAfterDeduction = amount - totalDeduction,
+            deductionAmount = totalDeduction,
+            breakdown = breakdown
         )
     }
 }
@@ -22,5 +57,7 @@ class ApplyKmDeductionUseCase {
  */
 data class KmDeductionResult(
     val amountAfterDeduction: Long,
-    val deductionAmount: Long
+    val deductionAmount: Long,
+    val breakdown: Map<String, Long>
 )
+

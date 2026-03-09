@@ -14,17 +14,24 @@ class TimeBasedExpenseInMemoryRepository(
     private val _expensesFlow = MutableStateFlow(expenses.toList())
 
     override fun getAllExpenses(): Flow<List<TimeBasedExpense>> {
+        val today = LocalDate.now()
+        syncExpenses(today)
         return _expensesFlow.asStateFlow()
     }
 
     override fun getExpenseById(id: String): Flow<TimeBasedExpense?> {
-
         return _expensesFlow.map { expenses ->
             expenses.find { it.id == id }
         }
     }
 
+    override suspend fun addExpense(expense: TimeBasedExpense) {
+        expenses.add(expense)
+        _expensesFlow.value = expenses.toList()
+    }
+
     override suspend fun updateExpenses(expenses: List<TimeBasedExpense>) {
+
         expenses.forEach { updated ->
             val index = this.expenses.indexOfFirst { it.id == updated.id }
             if (index != -1) {
@@ -35,26 +42,55 @@ class TimeBasedExpenseInMemoryRepository(
         _expensesFlow.value = this.expenses.toList()
     }
 
-    override fun syncExpenses(today: LocalDate) {
+    override suspend fun subtractContribution(id: String, amount: Long) {
+        val index = expenses.indexOfFirst { it.id == id }
+        if (index != -1) {
+            val expense = expenses[index]
+            val newAccumulated = (expense.accumulatedAmount - amount).coerceAtLeast(0)
+            val newContributionToday = (expense.contributionToday - amount).coerceAtLeast(0)
+            
+            expenses[index] = expense.copy(
+                accumulatedAmount = newAccumulated,
+                contributionToday = newContributionToday
+            )
+            _expensesFlow.value = expenses.toList()
+        }
+    }
 
+    override fun syncExpenses(today: LocalDate) {
         val currentList = _expensesFlow.value
         var hasChanges = false
 
         val synchronizedList = currentList.map { expense ->
-            if (expense.isExpired(today)) {
+            // First we sync the daily contribution (reset if it's a new day)
+            var updatedExpense = expense.syncDailyContribution(today)
+            
+            // Then we check for renewal
+            if (updatedExpense.isExpired(today)) {
                 hasChanges = true
-                expense.renew(today)
-            } else {
-                expense
+                updatedExpense = updatedExpense.renew(today)
             }
+            
+            // If the day changed but it wasn't expired, it still counts as a change in the flow
+            if (updatedExpense != expense) {
+                hasChanges = true
+            }
+            
+            updatedExpense
         }
+
         // We only issue if there were actual renovations to avoid endless recompositions.
         if (hasChanges) {
-            _expensesFlow.value = synchronizedList
-
-            TimeBasedExpensesFake.expenses.clear()
-            TimeBasedExpensesFake.expenses.addAll(synchronizedList)
-
+            // Update the underlying list items
+            synchronizedList.forEach { updated ->
+                val index = expenses.indexOfFirst { it.id == updated.id }
+                if (index != -1) {
+                    expenses[index] = updated
+                }
+            }
+            
+            _expensesFlow.value = expenses.toList()
         }
     }
+
 }

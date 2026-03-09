@@ -22,15 +22,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 
+import com.control_delivery.finanzas_delivery.domain.model.Order
+
 @Composable
 fun AddOrderDialog (
     modifier: Modifier = Modifier,
     viewModel: AddOrderViewModel = hiltViewModel(),
+    orderToEdit: Order? = null,
     onDismiss: () -> Unit,
 
 ) {
     LaunchedEffect(Unit) {
-        viewModel.resetState()
+        if (orderToEdit != null) {
+            viewModel.loadOrder(orderToEdit)
+        } else {
+            viewModel.resetState()
+        }
     }
     val uiState = viewModel.uiState
 
@@ -45,9 +52,10 @@ fun AddOrderDialog (
                    verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(modifier = Modifier.padding(bottom = 8.dp),
-                     text = "Add Order",
+                     text = if (uiState.isEditing) "Edit Order" else "Add Order",
                      style = MaterialTheme.typography.headlineSmall
                 )
+
                 OutlinedTextField(modifier = Modifier.fillMaxWidth(),
                                   value = uiState.platform,
                                   onValueChange = { viewModel.onPlatformChange(it) },
@@ -65,6 +73,25 @@ fun AddOrderDialog (
                     label = { Text("Delivery Value") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        modifier = Modifier.weight(1f),
+                        value = uiState.toPickupKm,
+                        onValueChange = { viewModel.onToPickupKmChange(it) },
+                        label = { Text("KM Pickup") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                    )
+                    OutlinedTextField(
+                        modifier = Modifier.weight(1f),
+                        value = uiState.toDeliveryKm,
+                        onValueChange = { viewModel.onToDeliveryKmChange(it) },
+                        label = { Text("KM Delivery") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                    )
+                }
                 Row (modifier = Modifier.fillMaxWidth(),
                      horizontalArrangement = Arrangement.End
                 ) {
@@ -76,8 +103,9 @@ fun AddOrderDialog (
                         enabled = uiState.isFormValid && !uiState.isSaving
                     ) {
                         if (uiState.isSaving) CircularProgressIndicator()
-                        else Text("Confirm")
+                        else Text(if (uiState.isEditing) "Update" else "Confirm")
                     }
+
                 }
             }
 

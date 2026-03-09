@@ -43,4 +43,14 @@ class OrderInMemoryRepository (
                 .sumOf { it.amountAfterKmDeduction }
         }
     }
+
+    override suspend fun deleteOrder(id: String) {
+        orderI.deleteOrder(id)
+        _ordersFlow.value = orderI.orders.toList()
+    }
+
+    override suspend fun updateOrder(order: Order) {
+        orderI.updateOrder(order)
+        _ordersFlow.value = orderI.orders.toList()
+    }
 }

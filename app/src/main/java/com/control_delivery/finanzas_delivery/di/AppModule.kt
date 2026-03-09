@@ -1,7 +1,9 @@
 package com.control_delivery.finanzas_delivery.di
 
+import com.control_delivery.finanzas_delivery.data.repository.DistanceBasedExpenseInMemoryRepository
 import com.control_delivery.finanzas_delivery.data.repository.OrderInMemoryRepository
 import com.control_delivery.finanzas_delivery.data.repository.TimeBasedExpenseInMemoryRepository
+import com.control_delivery.finanzas_delivery.domain.repository.DistanceBasedExpenseRepository
 import com.control_delivery.finanzas_delivery.domain.repository.OrderRepository
 import com.control_delivery.finanzas_delivery.domain.repository.TimeBasedExpenseRepository
 import com.control_delivery.finanzas_delivery.domain.usecases.*
@@ -38,6 +40,20 @@ object AppModule {
     fun provideTimeBasedExpenseRepository(
         timeBasedExpenseInMemoryRepository: TimeBasedExpenseInMemoryRepository): TimeBasedExpenseRepository {
         return timeBasedExpenseInMemoryRepository
+    }
+
+    @Provides
+    @Singleton
+    fun provideDistanceBasedExpenseInMemoryRepository(): DistanceBasedExpenseInMemoryRepository {
+        return DistanceBasedExpenseInMemoryRepository()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDistanceBasedExpenseRepository(
+        distanceBasedExpenseInMemoryRepository: DistanceBasedExpenseInMemoryRepository
+    ): DistanceBasedExpenseRepository {
+        return distanceBasedExpenseInMemoryRepository
     }
 
     // --- USE CASES ---
@@ -122,7 +138,52 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideApplyKmDeductionUseCase(): ApplyKmDeductionUseCase = ApplyKmDeductionUseCase()
+    fun provideAddTimeBasedExpenseUseCase(
+        repository: TimeBasedExpenseRepository
+    ): AddTimeBasedExpenseUseCase {
+        return AddTimeBasedExpenseUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDeleteOrderUseCase(
+        orderRepository: OrderRepository,
+        timeBasedExpenseRepository: TimeBasedExpenseRepository
+    ): DeleteOrderUseCase {
+        return DeleteOrderUseCase(orderRepository, timeBasedExpenseRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUpdateOrderUseCase(
+        orderRepository: OrderRepository,
+        timeBasedExpenseRepository: TimeBasedExpenseRepository,
+        processOrderIncomeUseCase: ProcessOrderIncomeUseCase
+    ): UpdateOrderUseCase {
+        return UpdateOrderUseCase(orderRepository, timeBasedExpenseRepository, processOrderIncomeUseCase)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetDistanceBasedExpensesUseCase(
+        repository: DistanceBasedExpenseRepository
+    ): GetDistanceBasedExpensesUseCase {
+        return GetDistanceBasedExpensesUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideResetDistanceExpenseUseCase(
+        repository: DistanceBasedExpenseRepository
+    ): ResetDistanceExpenseUseCase {
+        return ResetDistanceExpenseUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideApplyKmDeductionUseCase(
+        repository: DistanceBasedExpenseRepository
+    ): ApplyKmDeductionUseCase = ApplyKmDeductionUseCase(repository)
 
     @Provides
     @Singleton

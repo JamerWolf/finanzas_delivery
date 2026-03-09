@@ -33,6 +33,7 @@ data class TimeBasedExpense(
     val startTimestamp: Long,
     val isDeleted: Boolean = false,
     val nextDeadline: Long = calculateDeadline(startTimestamp, frequency),
+    val currentCycleStart: Long = startTimestamp,
     val contributionToday: Long = 0,
     val lastContributionTimestamp: Long? = null
 ) {
@@ -51,11 +52,13 @@ data class TimeBasedExpense(
 
     /**
      * Calculate how much money you still need to save TODAY to reach the goal daily.
+     * Uses the stable daily quota to ensure consistency with reports.
      */
     fun getRemainingDailyQuota(today: LocalDate): Long {
         val totalNeededToday = getFullDailyQuota(today)
         return (totalNeededToday - contributionToday).coerceAtLeast(0)
     }
+
 
     /**
      * Check if the day has changed since the last contribution.
@@ -105,14 +108,18 @@ data class TimeBasedExpense(
 
     /**
      * Renew the deadline expense and reset the accumulated amount.
+     * Preserves any surplus from the previous cycle.
      * @return A copy of the expense with the new deadline or the same expense if it is not necessary.
      */
     fun renew(today: LocalDate): TimeBasedExpense {
         if (frequency !is ExpenseFrequency.Once && isExpired(today)) {
             return this.copy(
                 contributionToday = 0,
-                accumulatedAmount = 0,
-                nextDeadline=calculateDeadline(nextDeadline, frequency))
+                // We keep the surplus for the next cycle
+                accumulatedAmount = (accumulatedAmount - amount).coerceAtLeast(0),
+                nextDeadline = calculateDeadline(nextDeadline, frequency),
+                currentCycleStart = nextDeadline
+            )
         }
         return this
     }

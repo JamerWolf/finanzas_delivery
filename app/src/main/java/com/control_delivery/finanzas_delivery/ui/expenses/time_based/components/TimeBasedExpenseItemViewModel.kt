@@ -71,7 +71,7 @@ class TimeBasedExpenseItemViewModel @Inject constructor(
             generalGoalAmountText = "Goal: ${currencyFormat.format(expense.amount)}",
             dailyProgress = progressDailyValue,
             dailyProgressText = "${(progressDailyValue * 100).toInt()}%",
-            dailyGoalAmountText = "Goal: ${currencyFormat.format(expense.getDailyAmount(today))}",
+            dailyGoalAmountText = "Goal: ${currencyFormat.format(dailyQuota)}",
             savedToday = "Saved: ${currencyFormat.format(expense.contributionToday)}"
         )
     }

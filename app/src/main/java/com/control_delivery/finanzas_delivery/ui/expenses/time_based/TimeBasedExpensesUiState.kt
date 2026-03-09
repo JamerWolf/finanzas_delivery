@@ -8,5 +8,6 @@ import com.control_delivery.finanzas_delivery.domain.model.TimeBasedExpense
 data class TimeBasedExpensesUiState(
     val expenses: List<TimeBasedExpense> = emptyList(),
     val isLoading: Boolean = false,
+    val isAddDialogVisible: Boolean = false,
     val errorMessage: String? = null
 )

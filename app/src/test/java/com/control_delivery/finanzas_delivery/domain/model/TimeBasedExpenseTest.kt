@@ -32,14 +32,6 @@ class TimeBasedExpenseTest {
         )
     }
 
-
-    @Test
-    fun `getDailyAmount should return the correct amount for until 3 days`() {
-        val dailyAmount = expense.getDailyAmount(today)
-
-        assertEquals(10000.0, dailyAmount, 0.01)
-    }
-
     @Test
     fun `getDaysUntilDeadline should return the correct number of days until deadline`() {
         val daysUntilDeadline = expense.getDaysUntilDeadline(today)

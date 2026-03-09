@@ -16,6 +16,11 @@ interface TimeBasedExpenseRepository {
     fun getExpenseById(id: String): Flow<TimeBasedExpense?>
 
     /**
+     * Add a new time-based expense.
+     */
+    suspend fun addExpense(expense: TimeBasedExpense)
+
+    /**
      * Update the list of expenses.
      * @param expenses The new list of expenses.
      */
@@ -27,4 +32,9 @@ interface TimeBasedExpenseRepository {
      * @param today The date to check.
      */
     fun syncExpenses(today: LocalDate = LocalDate.now())
+
+    /**
+     * Subtracts a contribution from a specific expense.
+     */
+    suspend fun subtractContribution(id: String, amount: Long)
 }

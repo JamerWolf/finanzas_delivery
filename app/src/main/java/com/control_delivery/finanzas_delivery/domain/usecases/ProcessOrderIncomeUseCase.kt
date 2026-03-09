@@ -1,10 +1,13 @@
 package com.control_delivery.finanzas_delivery.domain.usecases
 
-data class OrderProcessingResult(
+import com.control_delivery.finanzas_delivery.domain.model.DistanceType
 
+data class OrderProcessingResult(
     val kmDeduction: Long,
     val timeExpensesDeduction: Long,
-    val finalNetProfit: Long
+    val finalNetProfit: Long,
+    val kmDeductionsBreakdown: Map<String, Long>,
+    val timeExpensesDeductionsBreakdown: Map<String, Long>
 )
 
 /**
@@ -17,16 +20,19 @@ class ProcessOrderIncomeUseCase (
     /**
      * Processes the amount of an order and returns the result of each filter.
      * @param orderAmount The amount of the order.
+     * @param distances The distances traveled in the order.
      * @return The result of each filter.
      */
-    suspend operator fun invoke(orderAmount: Long): OrderProcessingResult {
-        val kmResult = applyKmDeduction(orderAmount)
-        val finalNet = applyTimeBasedDeduction(kmResult.amountAfterDeduction)
+    suspend operator fun invoke(orderAmount: Long, distances: List<DistanceType>): OrderProcessingResult {
+        val kmResult = applyKmDeduction(orderAmount, distances)
+        val timeBasedResult = applyTimeBasedDeduction(kmResult.amountAfterDeduction)
 
         return OrderProcessingResult(
             kmDeduction = kmResult.deductionAmount,
-            timeExpensesDeduction = finalNet.deductionAmount,
-            finalNetProfit = finalNet.amountAfterDeduction
+            timeExpensesDeduction = timeBasedResult.deductionAmount,
+            finalNetProfit = timeBasedResult.amountAfterDeduction,
+            kmDeductionsBreakdown = kmResult.breakdown,
+            timeExpensesDeductionsBreakdown = timeBasedResult.breakdown
         )
     }
 }

@@ -14,13 +14,12 @@ class ApplyTimeBasedDeductionUseCase(
     private val repository: TimeBasedExpenseRepository
 ) {
     suspend operator fun invoke(amount: Long, today: LocalDate = LocalDate.now()): TimeBasedExpenseResult {
-        var pool = amount // pool of available money to be distributed among daily goals.
+        var pool = amount
+        // The repository now handles synchronization automatically when getting expenses
         val allExpenses = repository.getAllExpenses().first()
+        val breakdown = mutableMapOf<String, Long>()
         
-        var expensesToUpdate = allExpenses.map {
-
-            it.syncDailyContribution(today).renew(today)
-        }
+        var expensesToUpdate = allExpenses
 
         while (pool > 0) {
             val pendingExpenses = expensesToUpdate.filter {
@@ -43,6 +42,9 @@ class ApplyTimeBasedDeductionUseCase(
 
                     amountDistributedThisRound += amountToTake
                     pool -= amountToTake
+                    
+                    val currentBreakdown = breakdown.getOrDefault(expense.description, 0L)
+                    breakdown[expense.description] = currentBreakdown + amountToTake
 
                     expense.copy(
                         accumulatedAmount = expense.accumulatedAmount + amountToTake,
@@ -61,12 +63,15 @@ class ApplyTimeBasedDeductionUseCase(
 
         return TimeBasedExpenseResult(
             amountAfterDeduction = pool,
-            deductionAmount = amount - pool
+            deductionAmount = amount - pool,
+            breakdown = breakdown
         )
     }
 }
 
 data class TimeBasedExpenseResult(
     val amountAfterDeduction: Long,
-    val deductionAmount: Long
+    val deductionAmount: Long,
+    val breakdown: Map<String, Long>
 )
+

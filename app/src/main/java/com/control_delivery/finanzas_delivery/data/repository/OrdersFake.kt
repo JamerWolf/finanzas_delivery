@@ -68,6 +68,17 @@ data class Orders(var orders: MutableList<Order> = mutableListOf(
         return orders.filter {
             status.contains(it.status) && it.timestamp in startDate..endDate}
     }
+
+    fun deleteOrder(id: String) {
+        orders.removeIf { it.id == id }
+    }
+
+    fun updateOrder(order: Order) {
+        val index = orders.indexOfFirst { it.id == order.id }
+        if (index != -1) {
+            orders[index] = order
+        }
+    }
 }
 
 val orderInstance = Orders()
