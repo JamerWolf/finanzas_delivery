@@ -1,13 +1,28 @@
 package com.control_delivery.finanzas_delivery.ui.components.map
 
 import android.graphics.Color
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -29,18 +44,22 @@ import org.maplibre.geojson.Point
 
 /**
  * Replace this with your actual MapTiler API key.
- * The style URL uses "Dataviz Dark" to emulate the Cabify dark mode look.
+ * The style URL uses "Dataviz Dark" or "Dataviz Light" to emulate the Cabify look.
  */
 private const val MAPTILER_API_KEY = "WHxrBddYD6ejeLg3Udkr"
-private const val STYLE_URL = "https://api.maptiler.com/maps/dataviz-dark/style.json?key=$MAPTILER_API_KEY"
+private const val DARK_STYLE_URL = "https://api.maptiler.com/maps/dataviz-dark/style.json?key=$MAPTILER_API_KEY"
+private const val LIGHT_STYLE_URL = "https://api.maptiler.com/maps/dataviz-light/style.json?key=$MAPTILER_API_KEY"
 
 @Composable
 fun TripMap(
     route: List<RoutePoint>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    bottomPadding: Int = 0
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val isDarkTheme = isSystemInDarkTheme()
+    val targetStyle = if (isDarkTheme) DARK_STYLE_URL else LIGHT_STYLE_URL
 
     // Initialize MapLibre globally (only happens once)
     remember {
@@ -54,7 +73,10 @@ fun TripMap(
         }
     }
 
-    // Lifecycle observer to manage MapView lifecycle safely in Compose
+    // Track the last route size to decide if we should auto-zoom on update
+    val lastRouteSize = remember { mutableStateOf(0) }
+
+    // Lifecycle observer...
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
@@ -78,39 +100,76 @@ fun TripMap(
         factory = { 
             mapView.apply {
                 getMapAsync { map ->
-                    map.setStyle(STYLE_URL) { style ->
+                    map.setStyle(targetStyle) { style ->
                         drawRoute(style, route)
-                        
-                        // Fit camera bounds to route
-                        if (route.size > 1) {
-                            val boundsBuilder = LatLngBounds.Builder()
-                            route.forEach { point ->
-                                boundsBuilder.include(LatLng(point.lat, point.lng))
-                            }
-                            // Add some padding (e.g. 100 pixels) around the bounds
-                            map.easeCamera(
-                                CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 100),
-                                1000 // 1 second animation
-                            )
-                        } else if (route.size == 1) {
-                            map.easeCamera(
-                                CameraUpdateFactory.newLatLngZoom(LatLng(route.first().lat, route.first().lng), 14.0),
-                                1000
-                            )
-                        }
+                        adjustCameraToRoute(map, route, bottomPadding)
+                        lastRouteSize.value = route.size
                     }
                 }
             }
         },
         update = { view ->
             view.getMapAsync { map ->
-                val style = map.style
-                if (style != null && style.isFullyLoaded) {
-                    updateRouteInStyle(style, route)
+                val currentStyle = map.style ?: return@getMapAsync
+                
+                // Detection of theme change
+                if (currentStyle.isFullyLoaded && currentStyle.uri != targetStyle) {
+                    map.setStyle(targetStyle) { newStyle ->
+                        drawRoute(newStyle, route)
+                        adjustCameraToRoute(map, route, bottomPadding)
+                    }
+                } else if (currentStyle.isFullyLoaded) {
+                    // Update data
+                    updateRouteInStyle(currentStyle, route)
+                    
+                    // If route size changed significantly (e.g. from raw trace to snapped trace), auto-zoom
+                    if (route.size != lastRouteSize.value) {
+                        adjustCameraToRoute(map, route, bottomPadding)
+                        lastRouteSize.value = route.size
+                    }
                 }
             }
         }
     )
+}
+
+private fun adjustCameraToRoute(
+    map: org.maplibre.android.maps.MapLibreMap, 
+    route: List<RoutePoint>,
+    bottomPadding: Int
+) {
+    if (route.isEmpty()) return
+    
+    // Standard padding for sides/top
+    val paddingSide = 100
+    val paddingTop = 100
+    
+    // We add the custom bottomPadding (from the sheet) + a safety margin
+    val finalBottomPadding = bottomPadding + 50
+
+    if (route.size > 1) {
+        val boundsBuilder = LatLngBounds.Builder()
+        route.forEach { point ->
+            boundsBuilder.include(LatLng(point.lat, point.lng))
+        }
+        
+        map.easeCamera(
+            CameraUpdateFactory.newLatLngBounds(
+                boundsBuilder.build(), 
+                paddingSide, 
+                paddingTop, 
+                paddingSide, 
+                finalBottomPadding
+            ),
+            1200
+        )
+    } else {
+        // For single point, we zoom in but also offset it slightly up if padding is large
+        map.easeCamera(
+            CameraUpdateFactory.newLatLngZoom(LatLng(route[0].lat, route[0].lng), 15.0),
+            1200
+        )
+    }
 }
 
 private fun updateRouteInStyle(style: Style, routePoints: List<RoutePoint>) {

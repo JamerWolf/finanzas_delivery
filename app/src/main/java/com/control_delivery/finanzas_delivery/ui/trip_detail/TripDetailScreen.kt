@@ -15,6 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,6 +35,11 @@ fun TripDetailScreen(
         viewModel.loadTrip(tripId)
     }
     val state = viewModel.uiState
+    
+    // Convert 350.dp peek height to pixels for map padding
+    val sheetPeekHeightDp = 350.dp
+    val density = LocalDensity.current
+    val sheetPeekHeightPx = with(density) { sheetPeekHeightDp.roundToPx() }
     
     // Use BottomSheetScaffold to emulate Cabify's map + bottom panel design
     val bottomSheetState = rememberStandardBottomSheetState(
@@ -53,7 +60,7 @@ fun TripDetailScreen(
     } else {
         BottomSheetScaffold(
             scaffoldState = scaffoldState,
-            sheetPeekHeight = 350.dp,
+            sheetPeekHeight = sheetPeekHeightDp,
             sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
             topBar = {
                 TopAppBar(
@@ -87,7 +94,10 @@ fun TripDetailScreen(
                 .padding(top = innerPadding.calculateTopPadding(), bottom = 0.dp)) {
                 if (state.trip != null) {
                     val displayRoute = if (state.snappedRoute.isNotEmpty()) state.snappedRoute else state.trip.route
-                    TripMap(route = displayRoute)
+                    TripMap(
+                        route = displayRoute,
+                        bottomPadding = sheetPeekHeightPx
+                    )
                     
                     if (state.isSnappingRoute) {
                         Surface(
