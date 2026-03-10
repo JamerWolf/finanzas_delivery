@@ -16,6 +16,8 @@ data class Order(
     val totalAmount: Long,
     val status: OrderStatus = OrderStatus.ON_THE_WAY_TO_RECEIVE,
     val timestamp: Long = System.currentTimeMillis(),
+    val pickupLocation: RoutePoint? = null,
+    val deliveryLocation: RoutePoint? = null,
     val isDeleted: Boolean = false
 ) {
     init {

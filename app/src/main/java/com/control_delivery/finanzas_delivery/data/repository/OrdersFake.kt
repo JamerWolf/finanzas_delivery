@@ -46,10 +46,15 @@ data class Orders(var orders: MutableList<Order> = mutableListOf(
         status = OrderStatus.DELIVERED,
         timestamp = DateUtils.getTimestampRange("24-02-2026").first),
     Order(platform = "RAPPI",
-        customerAddress = "452 Street",
+        customerAddress = "Calle 10 #5-20, Barrio Latino",
         totalAmount = 4700,
         status = OrderStatus.DELIVERED,
         timestamp = DateUtils.getTimestampRange("10-03-2026").first),
+    Order(platform = "DIDI",
+        customerAddress = "Av. 2 #12-45, Centro",
+        totalAmount = 5800,
+        status = OrderStatus.DELIVERED,
+        timestamp = DateUtils.getTimestampRange("10-03-2026").first + 3600000), // 1 hour later
     )) {
     fun addOrder(order: Order): Order {
         orders.add(order)

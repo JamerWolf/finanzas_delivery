@@ -1,27 +1,30 @@
 package com.control_delivery.finanzas_delivery.ui.trip_detail
 
-import androidx.compose.foundation.clickable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.control_delivery.finanzas_delivery.ui.theme.Finanzas_deliveryTheme
 import com.control_delivery.finanzas_delivery.ui.components.map.TripMap
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,6 +39,18 @@ fun TripDetailScreen(
     }
     val state = viewModel.uiState
     
+    // UI states for map interaction
+    var isLegendVisible by remember { mutableStateOf(true) }
+    var resetZoomTrigger by remember { mutableIntStateOf(0) }
+
+    // Theme colors for minimalist markers
+    val pickupComposeColor = MaterialTheme.colorScheme.primary
+    val deliveryComposeColor = MaterialTheme.colorScheme.tertiary
+    val cabifyBlue = Color(0xFF4B6BFA)
+
+    val pickupColor = pickupComposeColor.toArgb()
+    val deliveryColor = deliveryComposeColor.toArgb()
+
     // Convert 350.dp peek height to pixels for map padding
     val sheetPeekHeightDp = 350.dp
     val density = LocalDensity.current
@@ -96,8 +111,78 @@ fun TripDetailScreen(
                     val displayRoute = if (state.snappedRoute.isNotEmpty()) state.snappedRoute else state.trip.route
                     TripMap(
                         route = displayRoute,
-                        bottomPadding = sheetPeekHeightPx
+                        orders = state.trip.orders,
+                        pickupColor = pickupColor,
+                        deliveryColor = deliveryColor,
+                        bottomPadding = sheetPeekHeightPx,
+                        resetTrigger = resetZoomTrigger
                     )
+
+                    // --- RESET ZOOM BUTTON ---
+                    FloatingActionButton(
+                        onClick = { resetZoomTrigger++ },
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(bottom = sheetPeekHeightDp + 16.dp, end = 16.dp)
+                            .size(48.dp)
+                            .align(Alignment.BottomEnd),
+                        shape = CircleShape,
+                        elevation = FloatingActionButtonDefaults.elevation(2.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MyLocation, 
+                            contentDescription = "Reset Zoom",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    // --- MAP LEGEND ---
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .align(Alignment.TopStart),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        // Toggle Button
+                        Surface(
+                            onClick = { isLegendVisible = !isLegendVisible },
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                            tonalElevation = 4.dp,
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = if (isLegendVisible) Icons.Default.Close else Icons.Default.Layers,
+                                    contentDescription = "Toggle Legend",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Legend Content
+                        AnimatedVisibility(visible = isLegendVisible) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                                tonalElevation = 4.dp,
+                                modifier = Modifier.width(IntrinsicSize.Max)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    LegendItem(color = Color.White, label = "Inicio", borderColor = Color.DarkGray)
+                                    LegendItem(color = cabifyBlue, label = "Fin", borderColor = Color.DarkGray)
+                                    LegendItem(color = pickupComposeColor, label = "Recogida", hasWhiteBorder = true)
+                                    LegendItem(color = deliveryComposeColor, label = "Entrega", hasWhiteBorder = true)
+                                }
+                            }
+                        }
+                    }
                     
                     if (state.isSnappingRoute) {
                         Surface(
@@ -153,6 +238,35 @@ fun TripDetailScreen(
                     Text("OK")
                 }
             }
+        )
+    }
+}
+
+@Composable
+fun LegendItem(
+    color: Color,
+    label: String,
+    borderColor: Color = Color.Transparent,
+    hasWhiteBorder: Boolean = false
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .background(color, CircleShape)
+                .then(
+                    if (hasWhiteBorder) Modifier.border(2.dp, Color.White, CircleShape)
+                    else if (borderColor != Color.Transparent) Modifier.border(2.dp, borderColor, CircleShape)
+                    else Modifier
+                )
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

@@ -50,13 +50,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun advanceOrderStatus(order: Order, onTripAutoCompleted: () -> Unit) {
-        val newStatus = when (order.status) {
-            OrderStatus.ON_THE_WAY_TO_RECEIVE -> OrderStatus.RECEIVED
-            OrderStatus.RECEIVED -> OrderStatus.ON_THE_WAY_TO_DELIVERY
-            OrderStatus.ON_THE_WAY_TO_DELIVERY -> OrderStatus.DELIVERED
-            else -> order.status
-        }
-        activeTripManager.updateOrder(order.copy(status = newStatus))
+        activeTripManager.advanceOrderStatus(order.id)
 
         // Check if all orders in the trip are now delivered
         val currentTrip = activeTripManager.activeTrip.value

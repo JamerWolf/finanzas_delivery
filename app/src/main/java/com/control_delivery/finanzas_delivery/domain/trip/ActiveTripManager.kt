@@ -80,7 +80,43 @@ class ActiveTripManager @Inject constructor() {
     }
 
     /**
-     * Updates an existing order inside the active trip (e.g. status change).
+     * Advances the status of an order and captures the current location for pickup/delivery points.
+     */
+    fun advanceOrderStatus(orderId: String) {
+        _activeTrip.update { currentTrip ->
+            if (currentTrip == null) return@update null
+            
+            val updatedOrders = currentTrip.orders.map { order ->
+                if (order.id == orderId) {
+                    val newStatus = when (order.status) {
+                        com.control_delivery.finanzas_delivery.domain.model.OrderStatus.ON_THE_WAY_TO_RECEIVE -> 
+                            com.control_delivery.finanzas_delivery.domain.model.OrderStatus.RECEIVED
+                        com.control_delivery.finanzas_delivery.domain.model.OrderStatus.RECEIVED -> 
+                            com.control_delivery.finanzas_delivery.domain.model.OrderStatus.ON_THE_WAY_TO_DELIVERY
+                        com.control_delivery.finanzas_delivery.domain.model.OrderStatus.ON_THE_WAY_TO_DELIVERY -> 
+                            com.control_delivery.finanzas_delivery.domain.model.OrderStatus.DELIVERED
+                        else -> order.status
+                    }
+                    
+                    val currentLocation = lastLocation?.let { 
+                        com.control_delivery.finanzas_delivery.domain.model.RoutePoint(it.latitude, it.longitude) 
+                    }
+                    
+                    order.copy(
+                        status = newStatus,
+                        pickupLocation = if (newStatus == com.control_delivery.finanzas_delivery.domain.model.OrderStatus.RECEIVED) currentLocation else order.pickupLocation,
+                        deliveryLocation = if (newStatus == com.control_delivery.finanzas_delivery.domain.model.OrderStatus.DELIVERED) currentLocation else order.deliveryLocation
+                    )
+                } else {
+                    order
+                }
+            }
+            currentTrip.copy(orders = updatedOrders)
+        }
+    }
+
+    /**
+     * Updates an existing order inside the active trip (e.g. platform or address edit).
      */
     fun updateOrder(updatedOrder: Order) {
         _activeTrip.update { currentTrip ->
