@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.control_delivery.finanzas_delivery.domain.usecases.GetTripByIdUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.DeleteTripUseCase
+import com.control_delivery.finanzas_delivery.domain.usecases.GetSnappedRouteUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -17,7 +18,8 @@ import javax.inject.Inject
 @HiltViewModel
 class TripDetailViewModel @Inject constructor(
     private val getTripByIdUseCase: GetTripByIdUseCase,
-    private val deleteTripUseCase: DeleteTripUseCase
+    private val deleteTripUseCase: DeleteTripUseCase,
+    private val getSnappedRouteUseCase: GetSnappedRouteUseCase
 ) : ViewModel() {
     var uiState by mutableStateOf(TripDetailUiState())
         private set
@@ -46,10 +48,27 @@ class TripDetailViewModel @Inject constructor(
                         isLoading = false,
                         error = null
                     )
+                    
+                    // Fetch snapped route from OSRM if there is a raw route and we haven't snapped it yet
+                    if (trip.route.isNotEmpty() && uiState.snappedRoute.isEmpty() && !uiState.isSnappingRoute) {
+                        snapRoute(trip.route)
+                    }
+                    
                 } else {
                     uiState = uiState.copy(isLoading = false, error = "Trip not found")
                 }
             }
+        }
+    }
+    
+    private fun snapRoute(rawRoute: List<com.control_delivery.finanzas_delivery.domain.model.RoutePoint>) {
+        viewModelScope.launch {
+            uiState = uiState.copy(isSnappingRoute = true)
+            val snapped = getSnappedRouteUseCase(rawRoute)
+            uiState = uiState.copy(
+                snappedRoute = snapped,
+                isSnappingRoute = false
+            )
         }
     }
 

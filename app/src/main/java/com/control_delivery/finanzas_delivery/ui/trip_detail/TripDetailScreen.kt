@@ -20,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.control_delivery.finanzas_delivery.ui.theme.Finanzas_deliveryTheme
+import com.control_delivery.finanzas_delivery.ui.components.map.TripMap
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,74 +34,116 @@ fun TripDetailScreen(
     }
     val state = viewModel.uiState
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Trip Details") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.showDeleteDialog() }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete Trip")
-                    }
-                }
-            )
+    // Use BottomSheetScaffold to emulate Cabify's map + bottom panel design
+    val bottomSheetState = rememberStandardBottomSheetState(
+        initialValue = SheetValue.PartiallyExpanded
+    )
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = bottomSheetState
+    )
+    
+    if (state.isLoading) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
         }
-    ) { padding ->
-        if (state.isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+    } else if (state.error != null) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(state.error, color = MaterialTheme.colorScheme.error)
+        }
+    } else {
+        BottomSheetScaffold(
+            scaffoldState = scaffoldState,
+            sheetPeekHeight = 350.dp,
+            sheetShape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            topBar = {
+                TopAppBar(
+                    title = { Text("Detalle del viaje") },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.showDeleteDialog() }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete Trip")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
+                    )
+                )
+            },
+            sheetContent = {
+                TripDetailContent(
+                    state = state,
+                    onToggleInfo = { viewModel.toggleInfoPopup() },
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
             }
-        } else if (state.error != null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(state.error, color = MaterialTheme.colorScheme.error)
+        ) { innerPadding ->
+            // The map sits behind the bottom sheet
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .padding(top = innerPadding.calculateTopPadding(), bottom = 0.dp)) {
+                if (state.trip != null) {
+                    val displayRoute = if (state.snappedRoute.isNotEmpty()) state.snappedRoute else state.trip.route
+                    TripMap(route = displayRoute)
+                    
+                    if (state.isSnappingRoute) {
+                        Surface(
+                            modifier = Modifier.padding(16.dp).align(Alignment.TopEnd),
+                            shape = RoundedCornerShape(50),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Ajustando ruta a las calles...", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
+                }
             }
-        } else {
-            TripDetailContent(
-                state = state,
-                onToggleInfo = { viewModel.toggleInfoPopup() },
-                modifier = Modifier.padding(padding)
-            )
         }
+    }
 
-        if (state.isDeleteDialogVisible) {
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissDeleteDialog() },
-                title = { Text("Delete Trip") },
-                text = { Text("Are you sure you want to delete this entire trip? Financial metrics will be updated.") },
-                confirmButton = {
-                    Button(
-                        onClick = { 
-                            viewModel.deleteTrip(tripId, onSuccess = onBackClick)
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Delete")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
-                        Text("Cancel")
-                    }
+    if (state.isDeleteDialogVisible) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissDeleteDialog() },
+            title = { Text("Delete Trip") },
+            text = { Text("Are you sure you want to delete this entire trip? Financial metrics will be updated.") },
+            confirmButton = {
+                Button(
+                    onClick = { 
+                        viewModel.deleteTrip(tripId, onSuccess = onBackClick)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
                 }
-            )
-        }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
-        if (state.isInfoPopupVisible) {
-            AlertDialog(
-                onDismissRequest = { viewModel.toggleInfoPopup() },
-                title = { Text("Deleted Expenses") },
-                text = { Text("Asterisks (*) indicate deductions related to expenses that have since been deleted from the app. They still apply to this trip.") },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.toggleInfoPopup() }) {
-                        Text("OK")
-                    }
+    if (state.isInfoPopupVisible) {
+        AlertDialog(
+            onDismissRequest = { viewModel.toggleInfoPopup() },
+            title = { Text("Deleted Expenses") },
+            text = { Text("Asterisks (*) indicate deductions related to expenses that have since been deleted from the app. They still apply to this trip.") },
+            confirmButton = {
+                TextButton(onClick = { viewModel.toggleInfoPopup() }) {
+                    Text("OK")
                 }
-            )
-        }
+            }
+        )
     }
 }
 
@@ -113,9 +156,9 @@ fun TripDetailContent(
     val scrollState = rememberScrollState()
     Column(
         modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(scrollState),
+            .fillMaxWidth()
+            .verticalScroll(scrollState)
+            .padding(bottom = 32.dp), // Extra padding at the bottom for scrolling
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // General Info
@@ -153,7 +196,7 @@ fun TripDetailContent(
                 }
                 
                 // KM Deductions
-                Divider()
+                HorizontalDivider()
                 Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
                     Text("Vehicle Expenses (KM)")
                     Text("- ${state.kmDeductionText}", color = MaterialTheme.colorScheme.error)
@@ -166,7 +209,7 @@ fun TripDetailContent(
                 }
 
                 // Time Deductions
-                Divider()
+                HorizontalDivider()
                 Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
                     Text("Savings / Time Expenses")
                     Text("- ${state.timeDeductionText}", color = MaterialTheme.colorScheme.error)
@@ -179,7 +222,7 @@ fun TripDetailContent(
                 }
 
                 // Net Profit
-                Divider(thickness = 2.dp)
+                HorizontalDivider(thickness = 2.dp)
                 Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
                     Text("Net Profit", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(state.netAmountText, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold)

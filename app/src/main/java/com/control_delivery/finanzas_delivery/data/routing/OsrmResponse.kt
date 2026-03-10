@@ -1,0 +1,17 @@
+package com.control_delivery.finanzas_delivery.data.routing
+
+import com.google.gson.annotations.SerializedName
+
+data class OsrmMatchResponse(
+    val code: String,
+    val matchings: List<OsrmMatching>?
+)
+
+data class OsrmMatching(
+    val geometry: OsrmGeometry
+)
+
+data class OsrmGeometry(
+    val type: String,
+    val coordinates: List<List<Double>> // [ [lon, lat], [lon, lat] ]
+)

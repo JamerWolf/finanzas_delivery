@@ -305,4 +305,49 @@ object AppModule {
         tripRepository: TripRepository,
         reverseTripIncomeUseCase: ReverseTripIncomeUseCase
     ): DeleteTripUseCase = DeleteTripUseCase(tripRepository, reverseTripIncomeUseCase)
+
+    // --- ROUTING ---
+    @Provides
+    @Singleton
+    fun provideOsrmApiService(): com.control_delivery.finanzas_delivery.data.routing.OsrmApiService {
+        val loggingInterceptor = okhttp3.logging.HttpLoggingInterceptor().apply {
+            level = okhttp3.logging.HttpLoggingInterceptor.Level.BODY
+        }
+        
+        // OSRM requires a descriptive User-Agent
+        val userAgentInterceptor = okhttp3.Interceptor { chain ->
+            val request = chain.request().newBuilder()
+                .header("User-Agent", "FinanzasDeliveryApp/1.0 (Android)")
+                .build()
+            chain.proceed(request)
+        }
+
+        val client = okhttp3.OkHttpClient.Builder()
+            .addInterceptor(userAgentInterceptor)
+            .addInterceptor(loggingInterceptor)
+            .build()
+
+        return retrofit2.Retrofit.Builder()
+            .baseUrl("http://router.project-osrm.org/")
+            .client(client)
+            .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
+            .build()
+            .create(com.control_delivery.finanzas_delivery.data.routing.OsrmApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRouteRepository(
+        apiService: com.control_delivery.finanzas_delivery.data.routing.OsrmApiService
+    ): com.control_delivery.finanzas_delivery.domain.routing.RouteRepository {
+        return com.control_delivery.finanzas_delivery.data.routing.OsrmRouteRepository(apiService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetSnappedRouteUseCase(
+        routeRepository: com.control_delivery.finanzas_delivery.domain.routing.RouteRepository
+    ): com.control_delivery.finanzas_delivery.domain.usecases.GetSnappedRouteUseCase {
+        return com.control_delivery.finanzas_delivery.domain.usecases.GetSnappedRouteUseCase(routeRepository)
+    }
 }

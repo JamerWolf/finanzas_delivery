@@ -118,7 +118,16 @@ class ActiveTripManager @Inject constructor() {
             if (currentTrip == null) return@update null
             val newTotal = currentTrip.totalDistanceKm + deltaKm
             Timber.d("Distance: +${String.format("%.3f", deltaKm)}km = ${String.format("%.3f", newTotal)}km total")
-            currentTrip.copy(totalDistanceKm = newTotal)
+            
+            val newRoutePoint = com.control_delivery.finanzas_delivery.domain.model.RoutePoint(
+                lat = location.latitude,
+                lng = location.longitude
+            )
+            
+            currentTrip.copy(
+                totalDistanceKm = newTotal,
+                route = currentTrip.route + newRoutePoint
+            )
         }
     }
 

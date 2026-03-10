@@ -6,6 +6,14 @@ import java.time.ZoneId
 import java.util.UUID
 
 /**
+ * Represents a single GPS coordinate recorded during a trip.
+ */
+data class RoutePoint(
+    val lat: Double,
+    val lng: Double
+)
+
+/**
  * Represents a group of delivery orders completed in a single driving session.
  * Distance is tracked continuously via GPS for the entire Trip.
  * Financial deductions (KM + time-based) are applied at the Trip level, not per-order.
@@ -17,6 +25,7 @@ data class Trip(
     val totalDistanceKm: Double = 0.0,
     val startTimestamp: Long = System.currentTimeMillis(),
     val endTimestamp: Long? = null,
+    val route: List<RoutePoint> = emptyList(),
 
     // Financial fields — populated when trip is COMPLETED
     val kmDeduction: Long = 0,
