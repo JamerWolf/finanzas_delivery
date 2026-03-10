@@ -6,10 +6,12 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.control_delivery.finanzas_delivery.domain.model.DistanceType
-import com.control_delivery.finanzas_delivery.domain.model.OrderStatus
 import com.control_delivery.finanzas_delivery.domain.usecases.DeleteOrderUseCase
+import com.control_delivery.finanzas_delivery.domain.usecases.GetDistanceBasedExpensesUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.GetOrderByIdUseCase
+import com.control_delivery.finanzas_delivery.domain.usecases.GetTimeBasedExpensesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
@@ -19,7 +21,9 @@ import javax.inject.Inject
 @HiltViewModel
 class OrderDetailViewModel @Inject constructor(
     private val getOrderByIdUseCase: GetOrderByIdUseCase,
-    private val deleteOrderUseCase: DeleteOrderUseCase
+    private val deleteOrderUseCase: DeleteOrderUseCase,
+    private val getTimeBasedExpensesUseCase: GetTimeBasedExpensesUseCase,
+    private val getDistanceBasedExpensesUseCase: GetDistanceBasedExpensesUseCase
 ) : ViewModel() {
     var uiState by mutableStateOf(OrderDetailUiState())
         private set
@@ -59,6 +63,26 @@ class OrderDetailViewModel @Inject constructor(
                     val pickupDistance = order.distances.filterIsInstance<DistanceType.ToPickup>().sumOf { it.value }
                     val deliveryDistance = order.distances.filterIsInstance<DistanceType.ToDelivery>().sumOf { it.value }
 
+                    // Find deleted time-based expenses to mark with asterisk
+                    val allTimeExpenses = getTimeBasedExpensesUseCase(includeDeleted = true).first()
+                    val deletedTimeNames = allTimeExpenses
+                        .filter { it.isDeleted }
+                        .map { it.description }
+                        .toSet()
+                    val deletedInTimeBreakdown = order.timeExpensesDeductionsBreakdown.keys
+                        .filter { it in deletedTimeNames }
+                        .toSet()
+
+                    // Find deleted distance-based expenses to mark with asterisk
+                    val allKmExpenses = getDistanceBasedExpensesUseCase(includeDeleted = true).first()
+                    val deletedKmNames = allKmExpenses
+                        .filter { it.isDeleted }
+                        .map { it.description }
+                        .toSet()
+                    val deletedInKmBreakdown = order.kmDeductionsBreakdown.keys
+                        .filter { it in deletedKmNames }
+                        .toSet()
+
                     uiState = uiState.copy(
                         order = order,
                         platform = order.platform.uppercase(),
@@ -73,6 +97,8 @@ class OrderDetailViewModel @Inject constructor(
                         timeExpensesAmount = currencyFormat.format(order.timeExpensesDeduction),
                         kmDeductionsBreakdown = order.kmDeductionsBreakdown.mapValues { currencyFormat.format(it.value) },
                         timeExpensesBreakdown = order.timeExpensesDeductionsBreakdown.mapValues { currencyFormat.format(it.value) },
+                        deletedTimeExpenseNames = deletedInTimeBreakdown,
+                        deletedKmExpenseNames = deletedInKmBreakdown,
                         isLoading = false
                     )
 

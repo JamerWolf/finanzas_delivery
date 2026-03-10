@@ -16,6 +16,8 @@ data class OrderDetailUiState(
     val timeExpensesAmount: String = "",
     val kmDeductionsBreakdown: Map<String, String> = emptyMap(),
     val timeExpensesBreakdown: Map<String, String> = emptyMap(),
+    val deletedTimeExpenseNames: Set<String> = emptySet(),
+    val deletedKmExpenseNames: Set<String> = emptySet(),
     val isDeleteDialogVisible: Boolean = false,
     val isEditDialogVisible: Boolean = false,
     val isLoading: Boolean = true,

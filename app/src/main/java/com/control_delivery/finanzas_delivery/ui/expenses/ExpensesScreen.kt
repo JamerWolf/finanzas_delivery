@@ -10,20 +10,25 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.control_delivery.finanzas_delivery.ui.expenses.distance_based.DistanceExpensesScreen
+import com.control_delivery.finanzas_delivery.ui.expenses.distance_based.DistanceExpensesViewModel
 import com.control_delivery.finanzas_delivery.ui.expenses.time_based.TimeBasedExpensesScreen
 import com.control_delivery.finanzas_delivery.ui.expenses.time_based.TimeBasedExpensesViewModel
 
 @Composable
 fun ExpensesScreen(
-    timeViewModel: TimeBasedExpensesViewModel = hiltViewModel()
+    timeViewModel: TimeBasedExpensesViewModel = hiltViewModel(),
+    distanceViewModel: DistanceExpensesViewModel = hiltViewModel()
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Time", "Distance")
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         floatingActionButton = {
-            FloatingActionButton(onClick = { 
-                if (selectedTab == 0) timeViewModel.onAddClick()
+            FloatingActionButton(onClick = {
+                when (selectedTab) {
+                    0 -> timeViewModel.onAddClick()
+                    1 -> distanceViewModel.onAddClick()
+                }
             }) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add Expense")
             }
@@ -46,7 +51,7 @@ fun ExpensesScreen(
 
             when (selectedTab) {
                 0 -> TimeBasedExpensesScreen(viewModel = timeViewModel)
-                1 -> DistanceExpensesScreen()
+                1 -> DistanceExpensesScreen(viewModel = distanceViewModel)
             }
         }
     }

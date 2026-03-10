@@ -9,6 +9,7 @@ import com.control_delivery.finanzas_delivery.domain.usecases.GetAmountNetUseCas
 import com.control_delivery.finanzas_delivery.domain.usecases.SyncTimeBasedExpensesUseCase
 import com.control_delivery.finanzas_delivery.utils.DateUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.text.NumberFormat
@@ -31,25 +32,20 @@ class OrdersTotalAmountViewModel @Inject constructor(
         viewModelScope.launch {
             syncTimeBasedExpensesUseCase()
 
-            // Observe gross weekly amount
-            launch {
-                val (start, end) = DateUtils.getTimestampRange("THIS_WEEK")
-                getAmountNetUseCase(start, end).collect { weeklyNet ->
-                    uiState = uiState.copy(
-                        totalAmountWeek = currencyFormat.format(weeklyNet)
-                    )
-                }
-            }
+            val (todayStart, todayEnd) = DateUtils.getTimestampRange("TODAY")
+            val (weekStart, weekEnd) = DateUtils.getTimestampRange("THIS_WEEK")
 
-            // Observe daily gross amount
-            launch {
-                val (start, end) = DateUtils.getTimestampRange("TODAY")
-                getAmountNetUseCase(start, end).collect { total ->
-                    Timber.d("Total: $total")
-                    uiState = uiState.copy(
-                        totalAmountDay = currencyFormat.format(total)
-                    )
-                }
+            combine(
+                getAmountNetUseCase(todayStart, todayEnd),
+                getAmountNetUseCase(weekStart, weekEnd)
+            ) { dailyNet, weeklyNet ->
+                TotalOrdersUiState(
+                    totalAmountDay = currencyFormat.format(dailyNet),
+                    totalAmountWeek = currencyFormat.format(weeklyNet),
+                    isLoading = false
+                )
+            }.collect { newState ->
+                uiState = newState
             }
         }
     }

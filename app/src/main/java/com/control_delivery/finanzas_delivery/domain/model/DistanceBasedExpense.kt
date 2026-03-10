@@ -8,7 +8,8 @@ data class DistanceBasedExpense(
     val id: String = UUID.randomUUID().toString(),
     val description: String,
     val type: DistanceExpenseType,
-    val appliedTo: List<java.lang.Class<out DistanceType>>
+    val appliedTo: List<java.lang.Class<out DistanceType>>,
+    val isDeleted: Boolean = false
 ) {
     val costPerKm: Long get() = when(type) {
         is DistanceExpenseType.PureDeduction -> {

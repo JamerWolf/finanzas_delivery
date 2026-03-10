@@ -9,5 +9,7 @@ data class TimeBasedExpensesUiState(
     val expenses: List<TimeBasedExpense> = emptyList(),
     val isLoading: Boolean = false,
     val isAddDialogVisible: Boolean = false,
+    val expenseToEdit: TimeBasedExpense? = null,
+    val expenseToDelete: TimeBasedExpense? = null,
     val errorMessage: String? = null
 )

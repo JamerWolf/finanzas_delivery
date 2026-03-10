@@ -7,9 +7,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.control_delivery.finanzas_delivery.domain.model.DistanceBasedExpense
 import com.control_delivery.finanzas_delivery.domain.model.DistanceExpenseType
-import com.control_delivery.finanzas_delivery.domain.model.DistanceType
+import com.control_delivery.finanzas_delivery.domain.usecases.AddDistanceBasedExpenseUseCase
+import com.control_delivery.finanzas_delivery.domain.usecases.DeleteDistanceBasedExpenseUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.GetDistanceBasedExpensesUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.ResetDistanceExpenseUseCase
+import com.control_delivery.finanzas_delivery.domain.usecases.UpdateDistanceBasedExpenseUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -19,7 +21,10 @@ import javax.inject.Inject
 @HiltViewModel
 class DistanceExpensesViewModel @Inject constructor(
     private val getDistanceBasedExpensesUseCase: GetDistanceBasedExpensesUseCase,
-    private val resetDistanceExpenseUseCase: ResetDistanceExpenseUseCase
+    private val resetDistanceExpenseUseCase: ResetDistanceExpenseUseCase,
+    private val addDistanceBasedExpenseUseCase: AddDistanceBasedExpenseUseCase,
+    private val deleteDistanceBasedExpenseUseCase: DeleteDistanceBasedExpenseUseCase,
+    private val updateDistanceBasedExpenseUseCase: UpdateDistanceBasedExpenseUseCase
 ) : ViewModel() {
 
     var uiState by mutableStateOf(DistanceExpensesUiState())
@@ -29,10 +34,14 @@ class DistanceExpensesViewModel @Inject constructor(
         maximumFractionDigits = 0
     }
 
+    /** Map of domain models by id for lookup when swipe triggers edit/delete */
+    private var domainExpensesById = mapOf<String, DistanceBasedExpense>()
+
     init {
         viewModelScope.launch {
             uiState = uiState.copy(isLoading = true)
             getDistanceBasedExpensesUseCase().collect { domainList ->
+                domainExpensesById = domainList.associateBy { it.id }
                 val uiList = domainList.map { mapToUiState(it) }
                 uiState = uiState.copy(
                     expenses = uiList,
@@ -41,6 +50,66 @@ class DistanceExpensesViewModel @Inject constructor(
             }
         }
     }
+
+    // --- Add ---
+
+    fun onAddClick() {
+        uiState = uiState.copy(isAddDialogVisible = true)
+    }
+
+    fun onDismissDialog() {
+        uiState = uiState.copy(isAddDialogVisible = false, expenseToEdit = null)
+    }
+
+    fun onSaveExpense(expense: DistanceBasedExpense) {
+        viewModelScope.launch {
+            addDistanceBasedExpenseUseCase(expense)
+            onDismissDialog()
+        }
+    }
+
+    // --- Edit ---
+
+    fun onEditClick(id: String) {
+        val expense = domainExpensesById[id] ?: return
+        uiState = uiState.copy(expenseToEdit = expense)
+    }
+
+    fun onUpdateExpense(expense: DistanceBasedExpense) {
+        viewModelScope.launch {
+            updateDistanceBasedExpenseUseCase(expense)
+            uiState = uiState.copy(expenseToEdit = null)
+        }
+    }
+
+    // --- Delete ---
+
+    fun onDeleteClick(id: String) {
+        val expense = domainExpensesById[id] ?: return
+        uiState = uiState.copy(expenseToDelete = expense)
+    }
+
+    fun onDismissDelete() {
+        uiState = uiState.copy(expenseToDelete = null)
+    }
+
+    fun onConfirmDelete() {
+        val expense = uiState.expenseToDelete ?: return
+        viewModelScope.launch {
+            deleteDistanceBasedExpenseUseCase(expense.id)
+            uiState = uiState.copy(expenseToDelete = null)
+        }
+    }
+
+    // --- Reset ---
+
+    fun onResetExpense(id: String) {
+        viewModelScope.launch {
+            resetDistanceExpenseUseCase(id)
+        }
+    }
+
+    // --- Mapper ---
 
     private fun mapToUiState(expense: DistanceBasedExpense): DistanceExpenseItemUiState {
         val type = expense.type
@@ -85,12 +154,6 @@ class DistanceExpensesViewModel @Inject constructor(
             )
         } else {
             DistanceExpenseItemUiState(id = expense.id, description = expense.description, costPerKmText = "", isSavingsGoal = false)
-        }
-    }
-
-    fun onResetExpense(id: String) {
-        viewModelScope.launch {
-            resetDistanceExpenseUseCase(id)
         }
     }
 }

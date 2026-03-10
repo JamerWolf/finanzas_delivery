@@ -10,10 +10,11 @@ class ApplyKmDeductionUseCase(
 ) {
     suspend operator fun invoke(amount: Long, distances: List<DistanceType>): KmDeductionResult {
         val allExpenses = repository.getDistanceBasedExpenses().first()
+        val activeExpenses = allExpenses.filter { !it.isDeleted }
         val breakdown = mutableMapOf<String, Long>()
         var totalDeduction = 0L
 
-        val updatedExpenses = allExpenses.map { expense ->
+        val updatedExpenses = activeExpenses.map { expense ->
             // Filter trayectos that apply to this expense
             val relevantKm = distances.filter { distance ->
                 expense.appliedTo.any { it.isInstance(distance) }

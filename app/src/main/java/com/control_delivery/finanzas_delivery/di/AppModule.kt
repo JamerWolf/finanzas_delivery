@@ -146,6 +146,22 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideDeleteTimeBasedExpenseUseCase(
+        repository: TimeBasedExpenseRepository
+    ): DeleteTimeBasedExpenseUseCase {
+        return DeleteTimeBasedExpenseUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUpdateTimeBasedExpenseUseCase(
+        repository: TimeBasedExpenseRepository
+    ): UpdateTimeBasedExpenseUseCase {
+        return UpdateTimeBasedExpenseUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
     fun provideDeleteOrderUseCase(
         orderRepository: OrderRepository,
         timeBasedExpenseRepository: TimeBasedExpenseRepository
@@ -169,6 +185,30 @@ object AppModule {
         repository: DistanceBasedExpenseRepository
     ): GetDistanceBasedExpensesUseCase {
         return GetDistanceBasedExpensesUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAddDistanceBasedExpenseUseCase(
+        repository: DistanceBasedExpenseRepository
+    ): AddDistanceBasedExpenseUseCase {
+        return AddDistanceBasedExpenseUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDeleteDistanceBasedExpenseUseCase(
+        repository: DistanceBasedExpenseRepository
+    ): DeleteDistanceBasedExpenseUseCase {
+        return DeleteDistanceBasedExpenseUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUpdateDistanceBasedExpenseUseCase(
+        repository: DistanceBasedExpenseRepository
+    ): UpdateDistanceBasedExpenseUseCase {
+        return UpdateDistanceBasedExpenseUseCase(repository)
     }
 
     @Provides

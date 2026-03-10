@@ -42,6 +42,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.control_delivery.finanzas_delivery.ui.add_order.AddOrderDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -163,7 +168,9 @@ fun OrderDetailContent(
             net = state.netAmount,
             timeExpensesAmount = state.timeExpensesAmount,
             kmBreakdown = state.kmDeductionsBreakdown,
-            timeBreakdown = state.timeExpensesBreakdown
+            timeBreakdown = state.timeExpensesBreakdown,
+            deletedTimeExpenseNames = state.deletedTimeExpenseNames,
+            deletedKmExpenseNames = state.deletedKmExpenseNames
         )
     }
 }
@@ -174,8 +181,25 @@ fun FinancialBreakdownCard(
     net: String,
     timeExpensesAmount: String,
     kmBreakdown: Map<String, String>,
-    timeBreakdown: Map<String, String>
+    timeBreakdown: Map<String, String>,
+    deletedTimeExpenseNames: Set<String> = emptySet(),
+    deletedKmExpenseNames: Set<String> = emptySet()
 ) {
+    var showDeletedInfoDialog by remember { mutableStateOf(false) }
+
+    if (showDeletedInfoDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeletedInfoDialog = false },
+            title = { Text("Deleted Expense/Goal") },
+            text = { Text("This expense or savings goal was deleted. It no longer applies to new orders, but historical deductions remain for accurate records.") },
+            confirmButton = {
+                TextButton(onClick = { showDeletedInfoDialog = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
@@ -192,8 +216,20 @@ fun FinancialBreakdownCard(
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
             Text("Vehicle Expenses (KM)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
             kmBreakdown.forEach { (description, amount) ->
+                val isDeleted = description in deletedKmExpenseNames
                 Row(Modifier.fillMaxWidth().padding(start = 8.dp), Arrangement.SpaceBetween) {
-                    Text(description, style = MaterialTheme.typography.bodySmall)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(description, style = MaterialTheme.typography.bodySmall)
+                        if (isDeleted) {
+                            Text(
+                                text = " *",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable { showDeletedInfoDialog = true }
+                            )
+                        }
+                    }
                     Text("- $amount", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -206,8 +242,20 @@ fun FinancialBreakdownCard(
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
             Text("Savings Goals (Time)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
             timeBreakdown.forEach { (description, amount) ->
+                val isDeleted = description in deletedTimeExpenseNames
                 Row(Modifier.fillMaxWidth().padding(start = 8.dp), Arrangement.SpaceBetween) {
-                    Text(description, style = MaterialTheme.typography.bodySmall)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(description, style = MaterialTheme.typography.bodySmall)
+                        if (isDeleted) {
+                            Text(
+                                text = " *",
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable { showDeletedInfoDialog = true }
+                            )
+                        }
+                    }
                     Text("- $amount", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
             }

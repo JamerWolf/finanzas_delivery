@@ -47,7 +47,10 @@ class DistanceBasedExpenseInMemoryRepository: DistanceBasedExpenseRepository {
     }
 
     override suspend fun deleteExpense(id: String) {
-        DistanceBasedExpensesFake.expenses.removeIf { it.id == id }
-        _expensesFlow.value = DistanceBasedExpensesFake.expenses.toList()
+        val index = DistanceBasedExpensesFake.expenses.indexOfFirst { it.id == id }
+        if (index != -1) {
+            DistanceBasedExpensesFake.expenses[index] = DistanceBasedExpensesFake.expenses[index].copy(isDeleted = true)
+            _expensesFlow.value = DistanceBasedExpensesFake.expenses.toList()
+        }
     }
 }

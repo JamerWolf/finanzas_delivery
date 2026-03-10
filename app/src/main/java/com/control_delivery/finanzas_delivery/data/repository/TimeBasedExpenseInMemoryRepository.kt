@@ -57,6 +57,14 @@ class TimeBasedExpenseInMemoryRepository(
         }
     }
 
+    override suspend fun deleteExpense(id: String) {
+        val index = expenses.indexOfFirst { it.id == id }
+        if (index != -1) {
+            expenses[index] = expenses[index].copy(isDeleted = true)
+            _expensesFlow.value = expenses.toList()
+        }
+    }
+
     override fun syncExpenses(today: LocalDate) {
         val currentList = _expensesFlow.value
         var hasChanges = false

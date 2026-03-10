@@ -7,14 +7,16 @@ import kotlinx.coroutines.flow.map
 
 /**
  * Case of use to list all time-based expenses.
- * It filters the expenses that have not been deleted.
+ * By default, it filters the expenses that have not been deleted.
+ * @param includeDeleted If true, returns all expenses including deleted ones.
  */
 class GetTimeBasedExpensesUseCase(
     private val repository: TimeBasedExpenseRepository
 ) {
-    operator fun invoke(): Flow<List<TimeBasedExpense>> {
+    operator fun invoke(includeDeleted: Boolean = false): Flow<List<TimeBasedExpense>> {
         return repository.getAllExpenses().map { expenses ->
-            expenses.filter { !it.isDeleted }
+            if (includeDeleted) expenses
+            else expenses.filter { !it.isDeleted }
         }
     }
 }

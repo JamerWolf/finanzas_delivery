@@ -32,18 +32,49 @@ import java.util.Locale
 @Composable
 fun AddTimeBasedExpenseDialog(
     onDismiss: () -> Unit,
-    onConfirm: (TimeBasedExpense) -> Unit
+    onConfirm: (TimeBasedExpense) -> Unit,
+    expenseToEdit: TimeBasedExpense? = null
 ) {
-    var description by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
-    var selectedFrequencyType by remember { mutableStateOf("Daily") }
+    val isEditing = expenseToEdit != null
+
+    // Initialize state from expenseToEdit if editing
+    var description by remember { mutableStateOf(expenseToEdit?.description ?: "") }
+    var amount by remember { mutableStateOf(expenseToEdit?.amount?.toString() ?: "") }
+    var selectedFrequencyType by remember {
+        mutableStateOf(
+            when (expenseToEdit?.frequency) {
+                is ExpenseFrequency.Daily -> "Daily"
+                is ExpenseFrequency.Weekly -> "Weekly"
+                is ExpenseFrequency.Monthly -> "Monthly"
+                is ExpenseFrequency.Yearly -> "Yearly"
+                is ExpenseFrequency.Once -> "Daily"
+                null -> "Daily"
+            }
+        )
+    }
     var expanded by remember { mutableStateOf(false) }
 
     // Specific frequency states
-    var selectedDayOfWeek by remember { mutableStateOf(DayOfWeek.MONDAY) }
-    var selectedDayOfMonth by remember { mutableStateOf(1) }
-    var selectedMonth by remember { mutableStateOf(Month.JANUARY) }
-    var selectedDayOfYear by remember { mutableStateOf(1) }
+    var selectedDayOfWeek by remember {
+        mutableStateOf(
+            (expenseToEdit?.frequency as? ExpenseFrequency.Weekly)?.dayOfWeek ?: DayOfWeek.MONDAY
+        )
+    }
+    var selectedDayOfMonth by remember {
+        mutableStateOf(
+            (expenseToEdit?.frequency as? ExpenseFrequency.Monthly)?.dayOfMonth ?: 1
+        )
+    }
+    var selectedMonth by remember {
+        mutableStateOf(
+            (expenseToEdit?.frequency as? ExpenseFrequency.Yearly)?.month ?: Month.JANUARY
+        )
+    }
+    var selectedDayOfYear by remember {
+        mutableStateOf(
+            (expenseToEdit?.frequency as? ExpenseFrequency.Yearly)?.dayOfMonth ?: 1
+        )
+    }
 
     // Date Picker States
     var showMonthlyDatePicker by remember { mutableStateOf(false) }
@@ -119,7 +150,7 @@ fun AddTimeBasedExpenseDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "New Savings Goal",
+                    text = if (isEditing) "Edit Savings Goal" else "New Savings Goal",
                     style = MaterialTheme.typography.headlineSmall
                 )
 
@@ -246,18 +277,31 @@ fun AddTimeBasedExpenseDialog(
                                 else -> ExpenseFrequency.Daily
                             }
 
-                            onConfirm(
-                                TimeBasedExpense(
-                                    description = description,
-                                    amount = target,
-                                    frequency = freq,
-                                    startTimestamp = startOfToday
+                            if (expenseToEdit != null) {
+                                onConfirm(
+                                    expenseToEdit.copy(
+                                        description = description,
+                                        amount = target,
+                                        frequency = freq,
+                                        nextDeadline = TimeBasedExpense.calculateDeadline(
+                                            expenseToEdit.currentCycleStart, freq
+                                        )
+                                    )
                                 )
-                            )
+                            } else {
+                                onConfirm(
+                                    TimeBasedExpense(
+                                        description = description,
+                                        amount = target,
+                                        frequency = freq,
+                                        startTimestamp = startOfToday
+                                    )
+                                )
+                            }
                         },
                         enabled = description.isNotBlank() && amount.isNotBlank()
                     ) {
-                        Text("Save Goal")
+                        Text(if (isEditing) "Update Goal" else "Save Goal")
                     }
                 }
             }
