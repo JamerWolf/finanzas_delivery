@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.control_delivery.finanzas_delivery.domain.model.DistanceBasedExpense
 import com.control_delivery.finanzas_delivery.domain.model.DistanceExpenseType
-import com.control_delivery.finanzas_delivery.domain.model.DistanceType
 
 @Composable
 fun AddDistanceBasedExpenseDialog(
@@ -51,18 +50,6 @@ fun AddDistanceBasedExpenseDialog(
     var targetKm by remember {
         mutableStateOf(
             (expenseToEdit?.type as? DistanceExpenseType.SavingsGoal)?.targetKm?.toString() ?: ""
-        )
-    }
-
-    // AppliedTo
-    var applyToPickup by remember {
-        mutableStateOf(
-            expenseToEdit?.appliedTo?.any { it == DistanceType.ToPickup::class.java } ?: true
-        )
-    }
-    var applyToDelivery by remember {
-        mutableStateOf(
-            expenseToEdit?.appliedTo?.any { it == DistanceType.ToDelivery::class.java } ?: true
         )
     }
 
@@ -147,26 +134,6 @@ fun AddDistanceBasedExpenseDialog(
                     )
                 }
 
-                // Applied To
-                Text(text = "Applies To", style = MaterialTheme.typography.labelLarge)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = applyToPickup,
-                        onClick = { applyToPickup = !applyToPickup },
-                        label = { Text("Pickup") },
-                        shape = RoundedCornerShape(20.dp)
-                    )
-                    FilterChip(
-                        selected = applyToDelivery,
-                        onClick = { applyToDelivery = !applyToDelivery },
-                        label = { Text("Delivery") },
-                        shape = RoundedCornerShape(20.dp)
-                    )
-                }
-
                 // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -177,11 +144,6 @@ fun AddDistanceBasedExpenseDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            val appliedTo = buildList {
-                                if (applyToPickup) add(DistanceType.ToPickup::class.java)
-                                if (applyToDelivery) add(DistanceType.ToDelivery::class.java)
-                            }
-
                             val type = if (isSavingsGoal) {
                                 val existingSavings = expenseToEdit?.type as? DistanceExpenseType.SavingsGoal
                                 DistanceExpenseType.SavingsGoal(
@@ -201,22 +163,19 @@ fun AddDistanceBasedExpenseDialog(
                                 onConfirm(
                                     expenseToEdit.copy(
                                         description = description,
-                                        type = type,
-                                        appliedTo = appliedTo
+                                        type = type
                                     )
                                 )
                             } else {
                                 onConfirm(
                                     DistanceBasedExpense(
                                         description = description,
-                                        type = type,
-                                        appliedTo = appliedTo
+                                        type = type
                                     )
                                 )
                             }
                         },
                         enabled = description.isNotBlank()
-                                && (applyToPickup || applyToDelivery)
                                 && if (isSavingsGoal) targetAmount.isNotBlank() && targetKm.isNotBlank()
                                    else pricePerUnit.isNotBlank() && kmPerUnit.isNotBlank()
                     ) {

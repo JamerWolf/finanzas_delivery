@@ -35,8 +35,11 @@ interface TimeBasedExpenseRepository {
 
     /**
      * Subtracts a contribution from a specific expense.
+     * @param id The ID of the expense.
+     * @param amount The amount to subtract.
+     * @param contributionDate The date the contribution was originally made.
      */
-    suspend fun subtractContribution(id: String, amount: Long)
+    suspend fun subtractContribution(id: String, amount: Long, contributionDate: LocalDate)
 
     /**
      * Soft-deletes a time-based expense by marking it as deleted.

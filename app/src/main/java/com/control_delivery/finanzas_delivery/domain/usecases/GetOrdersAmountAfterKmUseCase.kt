@@ -1,10 +1,14 @@
 package com.control_delivery.finanzas_delivery.domain.usecases
 
-import com.control_delivery.finanzas_delivery.domain.repository.OrderRepository
+import com.control_delivery.finanzas_delivery.domain.repository.TripRepository
 import kotlinx.coroutines.flow.Flow
 
-class GetOrdersAmountAfterKmUseCase(private val repository: OrderRepository) {
+/**
+ * Returns the total amount after KM deductions for completed trips in a date range.
+ * Now reads from TripRepository instead of OrderRepository.
+ */
+class GetOrdersAmountAfterKmUseCase(private val tripRepository: TripRepository) {
     operator fun invoke(startDate: Long, endDate: Long): Flow<Long> {
-        return repository.getOrdersAmountAfterKm(startDate, endDate)
+        return tripRepository.getTripsTotalAmountAfterKm(startDate, endDate)
     }
 }

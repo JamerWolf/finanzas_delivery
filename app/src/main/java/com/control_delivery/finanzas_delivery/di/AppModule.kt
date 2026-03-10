@@ -1,21 +1,36 @@
 package com.control_delivery.finanzas_delivery.di
 
+import android.content.Context
+import com.control_delivery.finanzas_delivery.data.location.FusedLocationTrackerImpl
 import com.control_delivery.finanzas_delivery.data.repository.DistanceBasedExpenseInMemoryRepository
 import com.control_delivery.finanzas_delivery.data.repository.OrderInMemoryRepository
 import com.control_delivery.finanzas_delivery.data.repository.TimeBasedExpenseInMemoryRepository
+import com.control_delivery.finanzas_delivery.data.repository.TripInMemoryRepository
+import com.control_delivery.finanzas_delivery.domain.location.LocationTracker
 import com.control_delivery.finanzas_delivery.domain.repository.DistanceBasedExpenseRepository
 import com.control_delivery.finanzas_delivery.domain.repository.OrderRepository
 import com.control_delivery.finanzas_delivery.domain.repository.TimeBasedExpenseRepository
+import com.control_delivery.finanzas_delivery.domain.repository.TripRepository
 import com.control_delivery.finanzas_delivery.domain.usecases.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+    // --- GPS / LOCATION ---
+    @Provides
+    @Singleton
+    fun provideLocationTracker(
+        @ApplicationContext context: Context
+    ): LocationTracker {
+        return FusedLocationTrackerImpl(context)
+    }
+
     // --- REPOSITORIES ---
     @Provides
     @Singleton
@@ -56,6 +71,20 @@ object AppModule {
         return distanceBasedExpenseInMemoryRepository
     }
 
+    @Provides
+    @Singleton
+    fun provideTripInMemoryRepository(): TripInMemoryRepository {
+        return TripInMemoryRepository()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTripRepository(
+        tripInMemoryRepository: TripInMemoryRepository
+    ): TripRepository {
+        return tripInMemoryRepository
+    }
+
     // --- USE CASES ---
 
     @Provides
@@ -85,9 +114,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideGetOrdersAmountAfterKmUseCase(
-        orderRepository: OrderRepository
+        tripRepository: TripRepository
     ): GetOrdersAmountAfterKmUseCase {
-        return GetOrdersAmountAfterKmUseCase(orderRepository)
+        return GetOrdersAmountAfterKmUseCase(tripRepository)
     }
 
     @Provides
@@ -164,19 +193,22 @@ object AppModule {
     @Singleton
     fun provideDeleteOrderUseCase(
         orderRepository: OrderRepository,
-        timeBasedExpenseRepository: TimeBasedExpenseRepository
+        tripRepository: TripRepository,
+        processTripIncomeUseCase: ProcessTripIncomeUseCase,
+        reverseTripIncomeUseCase: ReverseTripIncomeUseCase
     ): DeleteOrderUseCase {
-        return DeleteOrderUseCase(orderRepository, timeBasedExpenseRepository)
+        return DeleteOrderUseCase(orderRepository, tripRepository, processTripIncomeUseCase, reverseTripIncomeUseCase)
     }
 
     @Provides
     @Singleton
     fun provideUpdateOrderUseCase(
         orderRepository: OrderRepository,
-        timeBasedExpenseRepository: TimeBasedExpenseRepository,
-        processOrderIncomeUseCase: ProcessOrderIncomeUseCase
+        tripRepository: TripRepository,
+        processTripIncomeUseCase: ProcessTripIncomeUseCase,
+        reverseTripIncomeUseCase: ReverseTripIncomeUseCase
     ): UpdateOrderUseCase {
-        return UpdateOrderUseCase(orderRepository, timeBasedExpenseRepository, processOrderIncomeUseCase)
+        return UpdateOrderUseCase(orderRepository, tripRepository, processTripIncomeUseCase, reverseTripIncomeUseCase)
     }
 
     @Provides
@@ -232,8 +264,45 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideProcessOrderIncomeUseCase(
+    fun provideProcessTripIncomeUseCase(
         kmFilter: ApplyKmDeductionUseCase,
         timeFilter: ApplyTimeBasedDeductionUseCase
-    ): ProcessOrderIncomeUseCase = ProcessOrderIncomeUseCase(kmFilter, timeFilter)
+    ): ProcessTripIncomeUseCase = ProcessTripIncomeUseCase(kmFilter, timeFilter)
+
+    @Provides
+    @Singleton
+    fun provideCompleteTripUseCase(
+        activeTripManager: com.control_delivery.finanzas_delivery.domain.trip.ActiveTripManager,
+        processTripIncomeUseCase: ProcessTripIncomeUseCase,
+        tripRepository: TripRepository,
+        orderRepository: OrderRepository
+    ): CompleteTripUseCase = CompleteTripUseCase(
+        activeTripManager, processTripIncomeUseCase, tripRepository, orderRepository
+    )
+
+    @Provides
+    @Singleton
+    fun provideGetTripsFlowUseCase(
+        tripRepository: TripRepository
+    ): GetTripsFlowUseCase = GetTripsFlowUseCase(tripRepository)
+
+    @Provides
+    @Singleton
+    fun provideGetTripByIdUseCase(
+        tripRepository: TripRepository
+    ): GetTripByIdUseCase = GetTripByIdUseCase(tripRepository)
+
+    @Provides
+    @Singleton
+    fun provideReverseTripIncomeUseCase(
+        timeBasedRepo: TimeBasedExpenseRepository,
+        distanceBasedRepo: DistanceBasedExpenseRepository
+    ): ReverseTripIncomeUseCase = ReverseTripIncomeUseCase(timeBasedRepo, distanceBasedRepo)
+
+    @Provides
+    @Singleton
+    fun provideDeleteTripUseCase(
+        tripRepository: TripRepository,
+        reverseTripIncomeUseCase: ReverseTripIncomeUseCase
+    ): DeleteTripUseCase = DeleteTripUseCase(tripRepository, reverseTripIncomeUseCase)
 }

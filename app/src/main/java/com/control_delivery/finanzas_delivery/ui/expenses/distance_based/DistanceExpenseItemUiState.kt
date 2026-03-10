@@ -25,7 +25,5 @@ data class DistanceExpenseItemUiState(
     
     // For pure deductions (Gasoline)
     val pricePerUnitText: String = "",
-    val kmPerUnitText: String = "",
-    
-    val appliedToText: String = ""
+    val kmPerUnitText: String = ""
 )

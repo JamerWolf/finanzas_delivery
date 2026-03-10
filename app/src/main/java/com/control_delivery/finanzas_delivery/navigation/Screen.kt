@@ -26,15 +26,15 @@ sealed class Screen(
         icon = Icons.Default.Wallet
     )
 
-    // Order Details Screen (Does not appear in the BottomBar)
-    object OrderDetail : Screen(
-        route = "order_detail/{orderId}",
-        title = "Order Details",
+    // Trip Details Screen (Does not appear in the BottomBar)
+    object TripDetail : Screen(
+        route = "trip_detail/{tripId}",
+        title = "Trip Details",
         icon = Icons.Default.Home
     ) {
         /**
          * Auxiliary function to generate the actual route by injecting the ID.
          */
-        fun createRoute(orderId: String): String = "order_detail/$orderId"
+        fun createRoute(tripId: String): String = "trip_detail/$tripId"
     }
 }

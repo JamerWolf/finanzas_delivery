@@ -94,7 +94,7 @@ fun DistanceExpenseItem(
 
             // Footer
             Text(
-                text = state.appliedToText,
+                text = "Applies to: All trip distance",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.secondary
             )
@@ -159,8 +159,7 @@ fun DistanceExpenseItemGoalPreview() {
                 kmProgress = 0.6f,
                 kmProgressText = "60%",
                 kmCurrentText = "Driven: 3.000 km",
-                kmGoalText = "Service: 5.000 km",
-                appliedToText = "Applies to: Pickup, Delivery"
+                kmGoalText = "Service: 5.000 km"
             ),
             modifier = Modifier.padding(16.dp)
         )
@@ -178,8 +177,7 @@ fun DistanceExpenseItemDeductionPreview() {
                 costPerKmText = "Cost: $100/km",
                 isSavingsGoal = false,
                 pricePerUnitText = "Unit Price: $15.000",
-                kmPerUnitText = "Yield: 150 km/unit",
-                appliedToText = "Applies to: Pickup, Delivery"
+                kmPerUnitText = "Yield: 150 km/unit"
             ),
             modifier = Modifier.padding(16.dp)
         )

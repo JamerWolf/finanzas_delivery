@@ -37,13 +37,6 @@ class OrderInMemoryRepository (
         }
     }
 
-    override fun getOrdersAmountAfterKm(startDate: Long, endDate: Long): Flow<Long> {
-        return _ordersFlow.map { orders ->
-            orders.filter { it.status == OrderStatus.DELIVERED && it.timestamp in startDate..endDate }
-                .sumOf { it.amountAfterKmDeduction }
-        }
-    }
-
     override suspend fun deleteOrder(id: String) {
         orderI.deleteOrder(id)
         _ordersFlow.value = orderI.orders.toList()

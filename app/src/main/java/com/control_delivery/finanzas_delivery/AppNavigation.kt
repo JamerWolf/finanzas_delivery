@@ -11,7 +11,7 @@ import androidx.navigation.navArgument
 import com.control_delivery.finanzas_delivery.navigation.Screen
 import com.control_delivery.finanzas_delivery.ui.expenses.ExpensesScreen
 import com.control_delivery.finanzas_delivery.ui.home.HomeScreen
-import com.control_delivery.finanzas_delivery.ui.order_detail.OrderDetailScreen
+import com.control_delivery.finanzas_delivery.ui.trip_detail.TripDetailScreen
 
 @Composable
 fun AppNavigation(
@@ -25,22 +25,22 @@ fun AppNavigation(
     ) {
         // Association of the "home" route with the Composable HomeScreen
         composable(Screen.Home.route) {
-            HomeScreen(onOrderClick = { orderId ->
-                navController.navigate(Screen.OrderDetail.createRoute(orderId))
+            HomeScreen(onTripClick = { tripId ->
+                navController.navigate(Screen.TripDetail.createRoute(tripId))
             })
         }
         // Association of the “expenses” route with the Composable ExpensesScreen
         composable(Screen.Expenses.route) {
             ExpensesScreen()
         }
-        // Association of the “order_detail” route with the Composable OrderDetailScreen
+        // Association of the “trip_detail” route with the Composable TripDetailScreen
         composable(
-            route = Screen.OrderDetail.route,
-            arguments = listOf(navArgument("orderId") { type = NavType.StringType })
+            route = Screen.TripDetail.route,
+            arguments = listOf(navArgument("tripId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
-            OrderDetailScreen(
-                orderId = orderId,
+            val tripId = backStackEntry.arguments?.getString("tripId") ?: ""
+            TripDetailScreen(
+                tripId = tripId,
                 onBackClick = { navController.popBackStack() }
             )
         }

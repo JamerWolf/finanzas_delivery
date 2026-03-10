@@ -29,7 +29,7 @@ fun AddOrderDialog (
     modifier: Modifier = Modifier,
     viewModel: AddOrderViewModel = hiltViewModel(),
     orderToEdit: Order? = null,
-    onDismiss: () -> Unit,
+    onDismiss: (isNewTrip: Boolean) -> Unit,
 
 ) {
     LaunchedEffect(Unit) {
@@ -41,7 +41,7 @@ fun AddOrderDialog (
     }
     val uiState = viewModel.uiState
 
-    Dialog(onDismissRequest = { onDismiss() }) {
+    Dialog(onDismissRequest = { onDismiss(false) }) {
         Card(modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
@@ -73,29 +73,10 @@ fun AddOrderDialog (
                     label = { Text("Delivery Value") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        modifier = Modifier.weight(1f),
-                        value = uiState.toPickupKm,
-                        onValueChange = { viewModel.onToPickupKmChange(it) },
-                        label = { Text("KM Pickup") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                    )
-                    OutlinedTextField(
-                        modifier = Modifier.weight(1f),
-                        value = uiState.toDeliveryKm,
-                        onValueChange = { viewModel.onToDeliveryKmChange(it) },
-                        label = { Text("KM Delivery") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                    )
-                }
                 Row (modifier = Modifier.fillMaxWidth(),
                      horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = { onDismiss() }) {
+                    TextButton(onClick = { onDismiss(false) }) {
                         Text(text = "Cancel")
                     }
                     Button(

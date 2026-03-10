@@ -113,9 +113,6 @@ class DistanceExpensesViewModel @Inject constructor(
 
     private fun mapToUiState(expense: DistanceBasedExpense): DistanceExpenseItemUiState {
         val type = expense.type
-        val appliedToText = expense.appliedTo.joinToString(", ") { 
-            it.simpleName.replace("To", "") 
-        }
 
         return if (type is DistanceExpenseType.SavingsGoal) {
             val moneyProgress = if (type.targetAmount > 0) {
@@ -139,8 +136,7 @@ class DistanceExpensesViewModel @Inject constructor(
                 kmProgress = kmProgress,
                 kmProgressText = "${(kmProgress * 100).toInt()}%",
                 kmCurrentText = "Driven: ${String.format("%.1f", type.accumulatedKm)} km",
-                kmGoalText = "Service: ${String.format("%.0f", type.targetKm)} km",
-                appliedToText = "Applies to: $appliedToText"
+                kmGoalText = "Service: ${String.format("%.0f", type.targetKm)} km"
             )
         } else if (type is DistanceExpenseType.PureDeduction) {
             DistanceExpenseItemUiState(
@@ -149,8 +145,7 @@ class DistanceExpensesViewModel @Inject constructor(
                 costPerKmText = "Cost: ${currencyFormat.format(expense.costPerKm)}/km",
                 isSavingsGoal = false,
                 pricePerUnitText = "Unit Price: ${currencyFormat.format(type.pricePerUnit)}",
-                kmPerUnitText = "Yield: ${type.kmPerUnit} km/unit",
-                appliedToText = "Applies to: $appliedToText"
+                kmPerUnitText = "Yield: ${type.kmPerUnit} km/unit"
             )
         } else {
             DistanceExpenseItemUiState(id = expense.id, description = expense.description, costPerKmText = "", isSavingsGoal = false)

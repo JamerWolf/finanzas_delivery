@@ -1,4 +1,5 @@
 [versions]
+accompanist = "0.36.0"
 agp = "9.0.1"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -14,8 +15,10 @@ hilt = "2.59.1"
 ksp = "2.3.5"
 timber = "5.0.1"
 material3 = "1.4.0"
+playServicesLocation = "21.3.0"
 
 [libraries]
+accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanist" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -39,6 +42,7 @@ hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -42,12 +42,18 @@ class TimeBasedExpenseInMemoryRepository(
         _expensesFlow.value = this.expenses.toList()
     }
 
-    override suspend fun subtractContribution(id: String, amount: Long) {
+    override suspend fun subtractContribution(id: String, amount: Long, contributionDate: LocalDate) {
         val index = expenses.indexOfFirst { it.id == id }
         if (index != -1) {
             val expense = expenses[index]
             val newAccumulated = (expense.accumulatedAmount - amount).coerceAtLeast(0)
-            val newContributionToday = (expense.contributionToday - amount).coerceAtLeast(0)
+            
+            // Only subtract from today's contribution if the trip being reversed was actually made today
+            val newContributionToday = if (contributionDate == LocalDate.now()) {
+                (expense.contributionToday - amount).coerceAtLeast(0)
+            } else {
+                expense.contributionToday
+            }
             
             expenses[index] = expense.copy(
                 accumulatedAmount = newAccumulated,

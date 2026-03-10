@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.timber)
     implementation(libs.androidx.material3)
+    implementation(libs.play.services.location)
+    implementation(libs.accompanist.permissions)
     ksp(libs.hilt.compiler)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)

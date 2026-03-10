@@ -5,8 +5,6 @@ data class AddOrderUiState(
     val platform: String = "",
     val address: String = "",
     val amount: String = "",
-    val toPickupKm: String = "",
-    val toDeliveryKm: String = "",
     val isSaving: Boolean = false,
     val isEditing: Boolean = false,
     val errorMessage: String? = null,
@@ -14,6 +12,5 @@ data class AddOrderUiState(
 
     val isFormValid: Boolean
         get() = (platform.isNotBlank() && address.isNotBlank() && amount.isNotBlank()
-                && toPickupKm.isNotBlank() && toDeliveryKm.isNotBlank()
                 && (amount.toDoubleOrNull() ?: 0.0) > 0.0)
 }

@@ -1,8 +1,9 @@
 package com.control_delivery.finanzas_delivery.domain.usecases
 
-import com.control_delivery.finanzas_delivery.domain.model.DistanceType
-
-data class OrderProcessingResult(
+/**
+ * Result of processing a completed Trip's income through all expense filters.
+ */
+data class TripProcessingResult(
     val kmDeduction: Long,
     val timeExpensesDeduction: Long,
     val finalNetProfit: Long,
@@ -11,23 +12,25 @@ data class OrderProcessingResult(
 )
 
 /**
- * Master Orchestrator: Coordinates the flow of money through expense filters.
+ * Master Orchestrator: Coordinates the flow of money through expense filters at the Trip level.
+ * When a Trip completes, sum all order amounts → apply KM deduction on total trip distance
+ * → apply time-based deduction on the remainder.
  */
-class ProcessOrderIncomeUseCase (
+class ProcessTripIncomeUseCase(
     private val applyKmDeduction: ApplyKmDeductionUseCase,
     private val applyTimeBasedDeduction: ApplyTimeBasedDeductionUseCase
 ) {
     /**
-     * Processes the amount of an order and returns the result of each filter.
-     * @param orderAmount The amount of the order.
-     * @param distances The distances traveled in the order.
-     * @return The result of each filter.
+     * Processes the total income of a completed trip.
+     * @param totalAmount Sum of all order amounts in the trip.
+     * @param totalDistanceKm Total GPS-tracked distance for the trip.
+     * @return The result of each deduction filter.
      */
-    suspend operator fun invoke(orderAmount: Long, distances: List<DistanceType>): OrderProcessingResult {
-        val kmResult = applyKmDeduction(orderAmount, distances)
+    suspend operator fun invoke(totalAmount: Long, totalDistanceKm: Double): TripProcessingResult {
+        val kmResult = applyKmDeduction(totalAmount, totalDistanceKm)
         val timeBasedResult = applyTimeBasedDeduction(kmResult.amountAfterDeduction)
 
-        return OrderProcessingResult(
+        return TripProcessingResult(
             kmDeduction = kmResult.deductionAmount,
             timeExpensesDeduction = timeBasedResult.deductionAmount,
             finalNetProfit = timeBasedResult.amountAfterDeduction,
