@@ -9,6 +9,17 @@ interface OsrmApiService {
     suspend fun getMatch(
         @Path(value = "coordinates", encoded = true) coordinates: String,
         @Query("geometries") geometries: String = "geojson",
-        @Query("overview") overview: String = "full"
-    ): OsrmMatchResponse
+        @Query("overview") overview: String = "full",
+        @Query("tidy") tidy: Boolean = true,
+        @Query("gaps") gaps: String = "ignore",
+        @Query("radiuses") radiuses: String? = null
+    ): OsrmResponse
+
+    @GET("route/v1/driving/{coordinates}")
+    suspend fun getRoute(
+        @Path(value = "coordinates", encoded = true) coordinates: String,
+        @Query("geometries") geometries: String = "geojson",
+        @Query("overview") overview: String = "full",
+        @Query("alternatives") alternatives: Boolean = false
+    ): OsrmResponse
 }

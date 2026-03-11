@@ -78,7 +78,23 @@ object AppModule {
     @Provides
     @Singleton
     fun provideOsrmApiService(): com.control_delivery.finanzas_delivery.data.routing.OsrmApiService {
-        val client = okhttp3.OkHttpClient.Builder().build()
+        val loggingInterceptor = okhttp3.logging.HttpLoggingInterceptor().apply {
+            level = okhttp3.logging.HttpLoggingInterceptor.Level.BODY
+        }
+        
+        // OSRM public server REQUIRES a descriptive User-Agent
+        val userAgentInterceptor = okhttp3.Interceptor { chain ->
+            val request = chain.request().newBuilder()
+                .header("User-Agent", "FinanzasDeliveryApp/1.0 (Android; imerc)")
+                .build()
+            chain.proceed(request)
+        }
+
+        val client = okhttp3.OkHttpClient.Builder()
+            .addInterceptor(userAgentInterceptor)
+            .addInterceptor(loggingInterceptor)
+            .build()
+
         return retrofit2.Retrofit.Builder()
             .baseUrl("http://router.project-osrm.org/")
             .client(client)

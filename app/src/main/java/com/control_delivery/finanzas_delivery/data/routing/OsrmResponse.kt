@@ -2,12 +2,13 @@ package com.control_delivery.finanzas_delivery.data.routing
 
 import com.google.gson.annotations.SerializedName
 
-data class OsrmMatchResponse(
+data class OsrmResponse(
     val code: String,
-    val matchings: List<OsrmMatching>?
+    val matchings: List<OsrmRouteData>?,
+    val routes: List<OsrmRouteData>?
 )
 
-data class OsrmMatching(
+data class OsrmRouteData(
     val geometry: OsrmGeometry
 )
 

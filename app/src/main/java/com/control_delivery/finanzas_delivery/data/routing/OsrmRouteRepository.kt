@@ -17,32 +17,52 @@ class OsrmRouteRepository @Inject constructor(
         // OSRM format: lon,lat;lon,lat;...
         val coordinateString = points.joinToString(";") { "${it.lng},${it.lat}" }
         
+        // 1. Try Match API first (best for high-density GPS traces)
         try {
-            val response = apiService.getMatch(coordinates = coordinateString)
+            val radiusesString = points.joinToString(";") { "50" } 
+            val response = apiService.getMatch(coordinates = coordinateString, radiuses = radiusesString)
             
             if (response.code == "Ok" && !response.matchings.isNullOrEmpty()) {
                 val snappedPoints = mutableListOf<RoutePoint>()
-                
-                // OSRM might return multiple matchings if there are gaps. We combine them.
                 response.matchings.forEach { matching ->
                     matching.geometry.coordinates.forEach { coord ->
                         if (coord.size >= 2) {
-                            val lon = coord[0]
-                            val lat = coord[1]
-                            snappedPoints.add(RoutePoint(lat, lon))
+                            snappedPoints.add(RoutePoint(lat = coord[1], lng = coord[0]))
                         }
                     }
                 }
-                Timber.d("Successfully snapped route. Original: ${points.size}, Snapped: ${snappedPoints.size}")
+                Timber.d("OSRM Match successful. Original: ${points.size}, Snapped: ${snappedPoints.size}")
                 return snappedPoints
             } else {
-                Timber.w("OSRM returned non-Ok code: ${response.code}. Matchings null? ${response.matchings == null}")
+                Timber.w("OSRM Match returned code: ${response.code}. Trying Route API fallback...")
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to snap route via OSRM")
+            Timber.w("OSRM Match failed (${e.message}). Trying Route API fallback...")
         }
 
-        // Fallback to original straight lines if API fails
+        // 2. Fallback to Route API (best for sparse waypoints or when Match fails)
+        try {
+            val response = apiService.getRoute(coordinates = coordinateString)
+            if (response.code == "Ok" && !response.routes.isNullOrEmpty()) {
+                val routePoints = mutableListOf<RoutePoint>()
+                response.routes.forEach { route ->
+                    route.geometry.coordinates.forEach { coord ->
+                        if (coord.size >= 2) {
+                            routePoints.add(RoutePoint(lat = coord[1], lng = coord[0]))
+                        }
+                    }
+                }
+                Timber.d("OSRM Route successful. Points: ${routePoints.size}")
+                return routePoints
+            } else {
+                Timber.w("OSRM Route failed with code: ${response.code}")
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "OSRM Route failed too.")
+        }
+
+        // Final fallback: Raw trace
+        Timber.d("All OSRM attempts failed. Returning raw trace.")
         return points
     }
 }

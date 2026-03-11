@@ -17,8 +17,9 @@ class GetSnappedRouteUseCase(
     suspend operator fun invoke(rawRoute: List<RoutePoint>): List<RoutePoint> {
         if (rawRoute.size < 2) return rawRoute
 
-        // OSRM URL limit is usually around 8000 chars, or ~100 coords. We chunk by 90 to be safe.
-        val chunkSize = 90
+        // OSRM public server has limits on URL length and number of points for Match service.
+        // We reduce from 90 to 40 to avoid "TooBig" errors (HTTP 400).
+        val chunkSize = 40
         val chunkedRoutes = rawRoute.chunked(chunkSize)
         val finalSnappedRoute = mutableListOf<RoutePoint>()
 

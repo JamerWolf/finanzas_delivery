@@ -3,10 +3,7 @@ package com.control_delivery.finanzas_delivery.ui.components.map
 import android.graphics.Color
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -19,6 +16,7 @@ import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapView
+import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.PropertyFactory
@@ -28,10 +26,8 @@ import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
+import timber.log.Timber
 
-/**
- * Replace this with your actual MapTiler API key.
- */
 private const val MAPTILER_API_KEY = "WHxrBddYD6ejeLg3Udkr"
 private const val DARK_STYLE_URL = "https://api.maptiler.com/maps/dataviz-dark/style.json?key=$MAPTILER_API_KEY"
 private const val LIGHT_STYLE_URL = "https://api.maptiler.com/maps/dataviz-light/style.json?key=$MAPTILER_API_KEY"
@@ -51,7 +47,7 @@ fun TripMap(
     val isDarkTheme = isSystemInDarkTheme()
     val targetStyle = if (isDarkTheme) DARK_STYLE_URL else LIGHT_STYLE_URL
 
-    // Initialize MapLibre globally (only happens once)
+    // Initialize MapLibre globally
     remember {
         MapLibre.getInstance(context)
         null
@@ -63,11 +59,12 @@ fun TripMap(
         }
     }
 
-    // Track the last values to detect changes in the update block
-    val lastRouteSize = remember { mutableStateOf(0) }
-    val lastResetTrigger = remember { mutableStateOf(resetTrigger) }
+    var mapInstance by remember { mutableStateOf<MapLibreMap?>(null) }
+    val lastRouteSize = remember { mutableIntStateOf(0) }
+    val lastResetTrigger = remember { mutableIntStateOf(resetTrigger) }
+    val lastStyleUri = remember { mutableStateOf("") }
 
-    // Lifecycle observer to manage MapView lifecycle safely in Compose
+    // Lifecycle management
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
@@ -80,91 +77,81 @@ fun TripMap(
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // Effect to handle Data/Style updates when map is ready
+    LaunchedEffect(mapInstance, targetStyle, route, orders, resetTrigger) {
+        val map = mapInstance ?: return@LaunchedEffect
         
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
+        // 1. Handle Style change (Theme)
+        if (lastStyleUri.value != targetStyle) {
+            Timber.d("TripMap: Setting style to $targetStyle")
+            map.setStyle(targetStyle) { style ->
+                lastStyleUri.value = targetStyle
+                drawRoute(style, route, orders, pickupColor, deliveryColor)
+                adjustCameraToRoute(map, route, bottomPadding)
+                lastRouteSize.intValue = route.size
+                lastResetTrigger.intValue = resetTrigger
+            }
+        } else {
+            // 2. Handle Data updates if style is already loaded
+            val currentStyle = map.style
+            if (currentStyle != null && currentStyle.isFullyLoaded) {
+                updateRouteInStyle(currentStyle, route, orders)
+                
+                // 3. Handle Auto-zoom if route changed or reset requested
+                if (route.size != lastRouteSize.intValue || resetTrigger != lastResetTrigger.intValue) {
+                    adjustCameraToRoute(map, route, bottomPadding)
+                    lastRouteSize.intValue = route.size
+                    lastResetTrigger.intValue = resetTrigger
+                }
+            }
         }
     }
 
     AndroidView(
         modifier = modifier.fillMaxSize(),
-        factory = { 
+        factory = {
             mapView.apply {
                 getMapAsync { map ->
-                    // Disable rotation and tilt for a cleaner UX
                     map.uiSettings.isRotateGesturesEnabled = false
                     map.uiSettings.isTiltGesturesEnabled = false
-                    
-                    map.setStyle(targetStyle) { style ->
-                        drawRoute(style, route, orders, pickupColor, deliveryColor)
-                        adjustCameraToRoute(map, route, bottomPadding)
-                        lastRouteSize.value = route.size
-                        lastResetTrigger.value = resetTrigger
-                    }
+                    mapInstance = map
                 }
             }
         },
-        update = { view ->
-            view.getMapAsync { map ->
-                val currentStyle = map.style ?: return@getMapAsync
-                
-                // Detection of theme change
-                if (currentStyle.isFullyLoaded && currentStyle.uri != targetStyle) {
-                    map.setStyle(targetStyle) { newStyle ->
-                        drawRoute(newStyle, route, orders, pickupColor, deliveryColor)
-                        adjustCameraToRoute(map, route, bottomPadding)
-                    }
-                } else if (currentStyle.isFullyLoaded) {
-                    // Update data
-                    updateRouteInStyle(currentStyle, route, orders)
-                    
-                    // If route size changed significantly or reset was triggered, auto-zoom
-                    if (route.size != lastRouteSize.value || resetTrigger != lastResetTrigger.value) {
-                        adjustCameraToRoute(map, route, bottomPadding)
-                        lastRouteSize.value = route.size
-                        lastResetTrigger.value = resetTrigger
-                    }
-                }
-            }
-        }
+        update = { /* Updates handled by LaunchedEffect */ }
     )
 }
 
 private fun adjustCameraToRoute(
-    map: org.maplibre.android.maps.MapLibreMap, 
+    map: MapLibreMap, 
     route: List<RoutePoint>,
     bottomPadding: Int
 ) {
     if (route.isEmpty()) return
-    
-    // Standard padding for sides/top
     val paddingSide = 100
     val paddingTop = 100
-    
-    // We add the custom bottomPadding (from the sheet) + a safety margin
     val finalBottomPadding = bottomPadding + 50
 
     if (route.size > 1) {
         val boundsBuilder = LatLngBounds.Builder()
-        route.forEach { point ->
-            boundsBuilder.include(LatLng(point.lat, point.lng))
-        }
+        route.forEach { boundsBuilder.include(LatLng(it.lat, it.lng)) }
         
-        map.easeCamera(
-            CameraUpdateFactory.newLatLngBounds(
-                boundsBuilder.build(), 
-                paddingSide, 
-                paddingTop, 
-                paddingSide, 
-                finalBottomPadding
-            ),
-            1200
-        )
+        try {
+            map.easeCamera(
+                CameraUpdateFactory.newLatLngBounds(
+                    boundsBuilder.build(), 
+                    paddingSide, paddingTop, paddingSide, finalBottomPadding
+                ),
+                1200
+            )
+        } catch (e: Exception) {
+            Timber.w("Failed to adjust camera: ${e.message}")
+        }
     } else {
-        map.easeCamera(
-            CameraUpdateFactory.newLatLngZoom(LatLng(route[0].lat, route[0].lng), 15.0),
-            1200
-        )
+        map.easeCamera(CameraUpdateFactory.newLatLngZoom(LatLng(route[0].lat, route[0].lng), 15.0), 1200)
     }
 }
 
@@ -179,34 +166,18 @@ private fun updateRouteInStyle(
 
     if (routePoints.size >= 2) {
         val points = routePoints.map { Point.fromLngLat(it.lng, it.lat) }
-        val lineString = LineString.fromLngLats(points)
-        source?.setGeoJson(Feature.fromGeometry(lineString))
+        source?.setGeoJson(Feature.fromGeometry(LineString.fromLngLats(points)))
 
-        // Update main markers
-        val startPoint = points.first()
-        val endPoint = points.last()
-        val startFeature = Feature.fromGeometry(startPoint).apply {
-            addStringProperty("marker-type", "start")
-        }
-        val endFeature = Feature.fromGeometry(endPoint).apply {
-            addStringProperty("marker-type", "end")
-        }
+        val startFeature = Feature.fromGeometry(points.first()).apply { addStringProperty("marker-type", "start") }
+        val endFeature = Feature.fromGeometry(points.last()).apply { addStringProperty("marker-type", "end") }
         markerSource?.setGeoJson(FeatureCollection.fromFeatures(arrayOf(startFeature, endFeature)))
     }
 
-    // Update order points
-    val orderFeatures = mutableListOf<Feature>()
-    orders.forEach { order ->
-        order.pickupLocation?.let { 
-            orderFeatures.add(Feature.fromGeometry(Point.fromLngLat(it.lng, it.lat)).apply {
-                addStringProperty("point-type", "pickup")
-            })
-        }
-        order.deliveryLocation?.let { 
-            orderFeatures.add(Feature.fromGeometry(Point.fromLngLat(it.lng, it.lat)).apply {
-                addStringProperty("point-type", "delivery")
-            })
-        }
+    val orderFeatures = orders.flatMap { order ->
+        listOfNotNull(
+            order.pickupLocation?.let { Feature.fromGeometry(Point.fromLngLat(it.lng, it.lat)).apply { addStringProperty("point-type", "pickup") } },
+            order.deliveryLocation?.let { Feature.fromGeometry(Point.fromLngLat(it.lng, it.lat)).apply { addStringProperty("point-type", "delivery") } }
+        )
     }
     ordersSource?.setGeoJson(FeatureCollection.fromFeatures(orderFeatures))
 }
@@ -218,93 +189,50 @@ private fun drawRoute(
     pickupColor: Int,
     deliveryColor: Int
 ) {
-    // 1. Line and Main Markers (Start/End)
     if (routePoints.size >= 2) {
         val points = routePoints.map { Point.fromLngLat(it.lng, it.lat) }
-        val lineString = LineString.fromLngLats(points)
-        val feature = Feature.fromGeometry(lineString)
+        val lineSource = GeoJsonSource("route-source", FeatureCollection.fromFeature(Feature.fromGeometry(LineString.fromLngLats(points))))
+        style.addSource(lineSource)
 
-        val sourceId = "route-source"
-        val source = GeoJsonSource(sourceId, FeatureCollection.fromFeature(feature))
-        style.addSource(source)
-
-        val lineLayer = LineLayer("route-layer", sourceId).apply {
+        style.addLayer(LineLayer("route-layer", "route-source").apply {
             setProperties(
                 PropertyFactory.lineColor(Color.parseColor("#4B6BFA")),
                 PropertyFactory.lineWidth(5f),
                 PropertyFactory.lineJoin(org.maplibre.android.style.layers.Property.LINE_JOIN_ROUND),
                 PropertyFactory.lineCap(org.maplibre.android.style.layers.Property.LINE_CAP_ROUND)
             )
-        }
-        style.addLayer(lineLayer)
+        })
 
-        val startPoint = points.first()
-        val endPoint = points.last()
-        val markerSourceId = "marker-source"
-        val startFeature = Feature.fromGeometry(startPoint).apply { addStringProperty("marker-type", "start") }
-        val endFeature = Feature.fromGeometry(endPoint).apply { addStringProperty("marker-type", "end") }
-        val markerSource = GeoJsonSource(markerSourceId, FeatureCollection.fromFeatures(arrayOf(startFeature, endFeature)))
-        style.addSource(markerSource)
+        val startFeature = Feature.fromGeometry(points.first()).apply { addStringProperty("marker-type", "start") }
+        val endFeature = Feature.fromGeometry(points.last()).apply { addStringProperty("marker-type", "end") }
+        style.addSource(GeoJsonSource("marker-source", FeatureCollection.fromFeatures(arrayOf(startFeature, endFeature))))
 
-        style.addLayer(CircleLayer("start-marker-layer", markerSourceId).apply {
+        style.addLayer(CircleLayer("start-marker-layer", "marker-source").apply {
             setFilter(org.maplibre.android.style.expressions.Expression.eq(org.maplibre.android.style.expressions.Expression.get("marker-type"), "start"))
-            setProperties(
-                PropertyFactory.circleRadius(8f),
-                PropertyFactory.circleColor(Color.WHITE),
-                PropertyFactory.circleStrokeWidth(2f),
-                PropertyFactory.circleStrokeColor(Color.parseColor("#333333"))
-            )
+            setProperties(PropertyFactory.circleRadius(8f), PropertyFactory.circleColor(Color.WHITE), PropertyFactory.circleStrokeWidth(2f), PropertyFactory.circleStrokeColor(Color.parseColor("#333333")))
         })
 
-        style.addLayer(CircleLayer("end-marker-layer", markerSourceId).apply {
+        style.addLayer(CircleLayer("end-marker-layer", "marker-source").apply {
             setFilter(org.maplibre.android.style.expressions.Expression.eq(org.maplibre.android.style.expressions.Expression.get("marker-type"), "end"))
-            setProperties(
-                PropertyFactory.circleRadius(8f),
-                PropertyFactory.circleColor(Color.parseColor("#4B6BFA")),
-                PropertyFactory.circleStrokeWidth(2f),
-                PropertyFactory.circleStrokeColor(Color.parseColor("#333333"))
-            )
+            setProperties(PropertyFactory.circleRadius(8f), PropertyFactory.circleColor(Color.parseColor("#4B6BFA")), PropertyFactory.circleStrokeWidth(2f), PropertyFactory.circleStrokeColor(Color.parseColor("#333333")))
         })
     }
 
-    // 2. Order Specific Points (Pickup/Delivery)
-    val orderFeatures = mutableListOf<Feature>()
-    orders.forEach { order ->
-        order.pickupLocation?.let { 
-            orderFeatures.add(Feature.fromGeometry(Point.fromLngLat(it.lng, it.lat)).apply {
-                addStringProperty("point-type", "pickup")
-            })
-        }
-        order.deliveryLocation?.let { 
-            orderFeatures.add(Feature.fromGeometry(Point.fromLngLat(it.lng, it.lat)).apply {
-                addStringProperty("point-type", "delivery")
-            })
-        }
-    }
-
-    val ordersSourceId = "orders-source"
-    val ordersSource = GeoJsonSource(ordersSourceId, FeatureCollection.fromFeatures(orderFeatures))
-    style.addSource(ordersSource)
-
-    // Pickup Layer
-    style.addLayer(CircleLayer("pickup-layer", ordersSourceId).apply {
-        setFilter(org.maplibre.android.style.expressions.Expression.eq(org.maplibre.android.style.expressions.Expression.get("point-type"), "pickup"))
-        setProperties(
-            PropertyFactory.circleRadius(6f),
-            PropertyFactory.circleColor(pickupColor),
-            PropertyFactory.circleStrokeWidth(2f),
-            PropertyFactory.circleStrokeColor(Color.WHITE)
+    val orderFeatures = orders.flatMap { order ->
+        listOfNotNull(
+            order.pickupLocation?.let { Feature.fromGeometry(Point.fromLngLat(it.lng, it.lat)).apply { addStringProperty("point-type", "pickup") } },
+            order.deliveryLocation?.let { Feature.fromGeometry(Point.fromLngLat(it.lng, it.lat)).apply { addStringProperty("point-type", "delivery") } }
         )
+    }
+    style.addSource(GeoJsonSource("orders-source", FeatureCollection.fromFeatures(orderFeatures)))
+
+    style.addLayer(CircleLayer("pickup-layer", "orders-source").apply {
+        setFilter(org.maplibre.android.style.expressions.Expression.eq(org.maplibre.android.style.expressions.Expression.get("point-type"), "pickup"))
+        setProperties(PropertyFactory.circleRadius(6f), PropertyFactory.circleColor(pickupColor), PropertyFactory.circleStrokeWidth(2f), PropertyFactory.circleStrokeColor(Color.WHITE))
     })
 
-    // Delivery Layer
-    style.addLayer(CircleLayer("delivery-layer", ordersSourceId).apply {
+    style.addLayer(CircleLayer("delivery-layer", "orders-source").apply {
         setFilter(org.maplibre.android.style.expressions.Expression.eq(org.maplibre.android.style.expressions.Expression.get("point-type"), "delivery"))
-        setProperties(
-            PropertyFactory.circleRadius(6f),
-            PropertyFactory.circleColor(deliveryColor),
-            PropertyFactory.circleStrokeWidth(2f),
-            PropertyFactory.circleStrokeColor(Color.WHITE)
-        )
+        setProperties(PropertyFactory.circleRadius(6f), PropertyFactory.circleColor(deliveryColor), PropertyFactory.circleStrokeWidth(2f), PropertyFactory.circleStrokeColor(Color.WHITE))
     })
 }
