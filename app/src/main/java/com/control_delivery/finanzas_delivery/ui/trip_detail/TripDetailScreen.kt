@@ -3,6 +3,7 @@ package com.control_delivery.finanzas_delivery.ui.trip_detail
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -326,8 +327,13 @@ fun TripDetailContent(
                     Text("- ${state.kmDeductionText}", color = MaterialTheme.colorScheme.error)
                 }
                 state.kmBreakdown.forEach { (name, amount) ->
+                    val isDeleted = !state.activeExpenseDescriptions.contains(name)
                     Row(Modifier.fillMaxWidth().padding(start = 16.dp), Arrangement.SpaceBetween) {
-                        Text(name, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            text = if (isDeleted) "$name *" else name,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = if (isDeleted) Modifier.clickable { onToggleInfo() } else Modifier
+                        )
                         Text("$ $amount", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
                 }
@@ -339,8 +345,13 @@ fun TripDetailContent(
                     Text("- ${state.timeDeductionText}", color = MaterialTheme.colorScheme.error)
                 }
                 state.timeBreakdown.forEach { (name, amount) ->
+                    val isDeleted = !state.activeExpenseDescriptions.contains(name)
                     Row(Modifier.fillMaxWidth().padding(start = 16.dp), Arrangement.SpaceBetween) {
-                        Text(name, style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            text = if (isDeleted) "$name *" else name,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = if (isDeleted) Modifier.clickable { onToggleInfo() } else Modifier
+                        )
                         Text("$ $amount", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     }
                 }

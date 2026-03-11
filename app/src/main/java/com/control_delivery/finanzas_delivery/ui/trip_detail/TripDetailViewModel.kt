@@ -8,7 +8,10 @@ import androidx.lifecycle.viewModelScope
 import com.control_delivery.finanzas_delivery.domain.usecases.GetTripByIdUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.DeleteTripUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.GetSnappedRouteUseCase
+import com.control_delivery.finanzas_delivery.domain.usecases.GetTimeBasedExpensesUseCase
+import com.control_delivery.finanzas_delivery.domain.usecases.GetDistanceBasedExpensesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
@@ -19,19 +22,29 @@ import javax.inject.Inject
 class TripDetailViewModel @Inject constructor(
     private val getTripByIdUseCase: GetTripByIdUseCase,
     private val deleteTripUseCase: DeleteTripUseCase,
-    private val getSnappedRouteUseCase: GetSnappedRouteUseCase
+    private val getSnappedRouteUseCase: GetSnappedRouteUseCase,
+    private val getTimeBasedExpensesUseCase: GetTimeBasedExpensesUseCase,
+    private val getDistanceBasedExpensesUseCase: GetDistanceBasedExpensesUseCase
 ) : ViewModel() {
     var uiState by mutableStateOf(TripDetailUiState())
         private set
 
     fun loadTrip(tripId: String) {
         viewModelScope.launch {
-            getTripByIdUseCase(tripId).collect { trip ->
+            combine(
+                getTripByIdUseCase(tripId),
+                getTimeBasedExpensesUseCase(),
+                getDistanceBasedExpensesUseCase()
+            ) { trip, timeExpenses, distanceExpenses ->
+                Triple(trip, timeExpenses, distanceExpenses)
+            }.collect { (trip, timeExpenses, distanceExpenses) ->
                 if (trip != null) {
                     val currencyFormat = NumberFormat.getCurrencyInstance(Locale.GERMANY).apply {
                         maximumFractionDigits = 0
                     }
                     val dateFormat = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm")
+                    
+                    val activeDescs = (timeExpenses.map { it.description } + distanceExpenses.map { it.description }).toSet()
 
                     uiState = uiState.copy(
                         trip = trip,
@@ -44,6 +57,7 @@ class TripDetailViewModel @Inject constructor(
                         timeDeductionText = currencyFormat.format(trip.timeExpensesDeduction),
                         kmBreakdown = trip.kmDeductionsBreakdown,
                         timeBreakdown = trip.timeExpensesDeductionsBreakdown,
+                        activeExpenseDescriptions = activeDescs,
                         orders = trip.orders.filter { !it.isDeleted }, // Don't display soft-deleted orders
                         isLoading = false,
                         error = null

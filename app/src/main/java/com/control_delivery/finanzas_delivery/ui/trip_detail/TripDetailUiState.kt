@@ -17,6 +17,7 @@ data class TripDetailUiState(
     val timeDeductionText: String = "",
     val kmBreakdown: Map<String, Long> = emptyMap(),
     val timeBreakdown: Map<String, Long> = emptyMap(),
+    val activeExpenseDescriptions: Set<String> = emptySet(),
     val orders: List<Order> = emptyList(),
     val isLoading: Boolean = true,
     val error: String? = null,

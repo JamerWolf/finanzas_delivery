@@ -16,7 +16,7 @@ class SyncTimeBasedExpensesUseCase (
      * Executes synchronization using the current date or a specific date.
      * @param today Reference date for synchronization (default is today).
      */
-    operator fun invoke(today: LocalDate = LocalDate.now()) {
+    suspend operator fun invoke(today: LocalDate = LocalDate.now()) {
         repository.syncExpenses(today)
     }
 }

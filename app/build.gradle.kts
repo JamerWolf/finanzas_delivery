@@ -7,11 +7,7 @@ plugins {
 
 android {
     namespace = "com.control_delivery.finanzas_delivery"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.control_delivery.finanzas_delivery"
@@ -70,6 +66,10 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    implementation(libs.gson)
+    ksp(libs.room.compiler)
     ksp(libs.hilt.compiler)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -80,5 +80,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-
 }
