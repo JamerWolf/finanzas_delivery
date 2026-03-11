@@ -14,7 +14,7 @@ import timber.log.Timber
 class GetSnappedRouteUseCase(
     private val routeRepository: RouteRepository
 ) {
-    suspend operator fun invoke(rawRoute: List<RoutePoint>): List<RoutePoint> {
+    suspend operator fun invoke(rawRoute: List<RoutePoint>): List<RoutePoint>? {
         if (rawRoute.size < 2) return rawRoute
 
         // OSRM public server has limits on URL length and number of points for Match service.
@@ -33,7 +33,7 @@ class GetSnappedRouteUseCase(
                     chunk
                 }
 
-                val snappedChunk = routeRepository.getSnappedRoute(pointsToSnap)
+                val snappedChunk = routeRepository.getSnappedRoute(pointsToSnap) ?: return null
                 
                 // Avoid duplicating the connecting point
                 if (index > 0 && finalSnappedRoute.isNotEmpty() && snappedChunk.isNotEmpty()) {
@@ -49,8 +49,8 @@ class GetSnappedRouteUseCase(
             }
             return finalSnappedRoute
         } catch (e: Exception) {
-            Timber.e(e, "Error snapping route in UseCase. Falling back to raw trace.")
-            return rawRoute
+            Timber.e(e, "Error snapping route in UseCase. Returning null.")
+            return null
         }
     }
 }

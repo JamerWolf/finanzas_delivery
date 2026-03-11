@@ -57,6 +57,7 @@ class RoomTripRepository @Inject constructor(private val tripDao: TripDao, priva
             startTimestamp = trip.startTimestamp, 
             endTimestamp = trip.endTimestamp, 
             route = trip.routeJson?.let { gson.fromJson(it, routeType) } ?: emptyList(), 
+            snappedRoute = trip.snappedRouteJson?.let { gson.fromJson(it, routeType) },
             kmDeduction = trip.kmDeduction, 
             timeExpensesDeduction = trip.timeExpensesDeduction, 
             kmDeductionsBreakdown = trip.kmBreakdownJson?.let { gson.fromJson(it, mapType) } ?: emptyMap(), 
@@ -72,6 +73,7 @@ class RoomTripRepository @Inject constructor(private val tripDao: TripDao, priva
         startTimestamp = this@toEntity.startTimestamp
         endTimestamp = this@toEntity.endTimestamp
         routeJson = gson.toJson(route)
+        snappedRouteJson = snappedRoute?.let { gson.toJson(it) }
         kmDeduction = this@toEntity.kmDeduction
         timeExpensesDeduction = this@toEntity.timeExpensesDeduction
         kmBreakdownJson = gson.toJson(kmDeductionsBreakdown)

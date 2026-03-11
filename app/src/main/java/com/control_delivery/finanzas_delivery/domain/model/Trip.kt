@@ -26,6 +26,7 @@ data class Trip(
     val startTimestamp: Long = System.currentTimeMillis(),
     val endTimestamp: Long? = null,
     val route: List<RoutePoint> = emptyList(),
+    val snappedRoute: List<RoutePoint>? = null,
 
     // Financial fields — populated when trip is COMPLETED
     val kmDeduction: Long = 0,

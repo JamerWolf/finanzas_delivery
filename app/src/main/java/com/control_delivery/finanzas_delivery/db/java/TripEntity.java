@@ -23,6 +23,9 @@ public class TripEntity {
     @Nullable
     public String routeJson;
     
+    @Nullable
+    public String snappedRouteJson;
+    
     public long kmDeduction;
     public long timeExpensesDeduction;
     

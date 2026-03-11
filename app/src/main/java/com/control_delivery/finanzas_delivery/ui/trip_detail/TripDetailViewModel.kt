@@ -10,8 +10,10 @@ import com.control_delivery.finanzas_delivery.domain.usecases.DeleteTripUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.GetSnappedRouteUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.GetTimeBasedExpensesUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.GetDistanceBasedExpensesUseCase
+import com.control_delivery.finanzas_delivery.domain.repository.TripRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
@@ -24,7 +26,8 @@ class TripDetailViewModel @Inject constructor(
     private val deleteTripUseCase: DeleteTripUseCase,
     private val getSnappedRouteUseCase: GetSnappedRouteUseCase,
     private val getTimeBasedExpensesUseCase: GetTimeBasedExpensesUseCase,
-    private val getDistanceBasedExpensesUseCase: GetDistanceBasedExpensesUseCase
+    private val getDistanceBasedExpensesUseCase: GetDistanceBasedExpensesUseCase,
+    private val tripRepository: TripRepository
 ) : ViewModel() {
     var uiState by mutableStateOf(TripDetailUiState())
         private set
@@ -60,12 +63,13 @@ class TripDetailViewModel @Inject constructor(
                         activeExpenseDescriptions = activeDescs,
                         orders = trip.orders.filter { !it.isDeleted }, // Don't display soft-deleted orders
                         isLoading = false,
-                        error = null
+                        error = null,
+                        snappedRoute = trip.snappedRoute ?: emptyList()
                     )
                     
-                    // Fetch snapped route from OSRM if there is a raw route and we haven't snapped it yet
-                    if (trip.route.isNotEmpty() && uiState.snappedRoute.isEmpty() && !uiState.isSnappingRoute) {
-                        snapRoute(trip.route)
+                    // If snapped route is not yet in cache, try to fetch it
+                    if (trip.snappedRoute == null && trip.route.isNotEmpty() && !uiState.isSnappingRoute) {
+                        snapAndCacheRoute(trip)
                     }
                     
                 } else {
@@ -75,14 +79,26 @@ class TripDetailViewModel @Inject constructor(
         }
     }
     
-    private fun snapRoute(rawRoute: List<com.control_delivery.finanzas_delivery.domain.model.RoutePoint>) {
+    private fun snapAndCacheRoute(trip: com.control_delivery.finanzas_delivery.domain.model.Trip) {
         viewModelScope.launch {
             uiState = uiState.copy(isSnappingRoute = true)
-            val snapped = getSnappedRouteUseCase(rawRoute)
-            uiState = uiState.copy(
-                snappedRoute = snapped,
-                isSnappingRoute = false
-            )
+            val snapped = getSnappedRouteUseCase(trip.route)
+            
+            if (snapped != null) {
+                // SUCCESS: Save to DB cache
+                val updatedTrip = trip.copy(snappedRoute = snapped)
+                tripRepository.updateTrip(updatedTrip)
+                
+                uiState = uiState.copy(
+                    snappedRoute = snapped,
+                    isSnappingRoute = false
+                )
+            } else {
+                // FAILURE: Just show raw route for now, don't update DB
+                uiState = uiState.copy(
+                    isSnappingRoute = false
+                )
+            }
         }
     }
 

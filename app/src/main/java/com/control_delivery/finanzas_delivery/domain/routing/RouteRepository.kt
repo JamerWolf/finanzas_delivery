@@ -6,7 +6,7 @@ interface RouteRepository {
     /**
      * Takes a list of raw GPS coordinates and returns a snapped path
      * perfectly aligned to the street network.
-     * Throws an exception if the network request fails.
+     * Returns null if the network request fails or no match is found.
      */
-    suspend fun getSnappedRoute(points: List<RoutePoint>): List<RoutePoint>
+    suspend fun getSnappedRoute(points: List<RoutePoint>): List<RoutePoint>?
 }

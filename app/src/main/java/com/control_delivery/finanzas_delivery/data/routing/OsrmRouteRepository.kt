@@ -11,7 +11,7 @@ class OsrmRouteRepository @Inject constructor(
     private val apiService: OsrmApiService
 ) : RouteRepository {
 
-    override suspend fun getSnappedRoute(points: List<RoutePoint>): List<RoutePoint> {
+    override suspend fun getSnappedRoute(points: List<RoutePoint>): List<RoutePoint>? {
         if (points.size < 2) return points
 
         // OSRM format: lon,lat;lon,lat;...
@@ -61,8 +61,8 @@ class OsrmRouteRepository @Inject constructor(
             Timber.e(e, "OSRM Route failed too.")
         }
 
-        // Final fallback: Raw trace
-        Timber.d("All OSRM attempts failed. Returning raw trace.")
-        return points
+        // Final fallback: Return null to indicate snapping failure (to avoid caching bad data)
+        Timber.d("All OSRM attempts failed. Returning null.")
+        return null
     }
 }
