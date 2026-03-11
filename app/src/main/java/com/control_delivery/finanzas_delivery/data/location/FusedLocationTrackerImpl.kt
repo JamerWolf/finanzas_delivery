@@ -14,7 +14,9 @@ import com.control_delivery.finanzas_delivery.domain.location.LocationTracker
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
 import timber.log.Timber
+import kotlin.coroutines.resume
 
 /**
  * GPS implementation using Google Play Services Fused Location Provider.
@@ -52,6 +54,32 @@ class FusedLocationTrackerImpl(
         awaitClose {
             Timber.d("Stopping GPS location updates (flow closed)")
             fusedClient.removeLocationUpdates(callback)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    override suspend fun getCurrentLocation(): Location? = suspendCancellableCoroutine { continuation ->
+        // Try getting last known location first (fastest)
+        fusedClient.lastLocation.addOnSuccessListener { lastLoc ->
+            if (lastLoc != null && (System.currentTimeMillis() - lastLoc.time) < 30_000) {
+                Timber.d("Using fresh lastKnownLocation: lat=${lastLoc.latitude}, lng=${lastLoc.longitude}")
+                continuation.resume(lastLoc)
+            } else {
+                // If last location is null or too old, request a fresh one
+                Timber.d("Last location missing or old, requesting fresh fix...")
+                fusedClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                    .addOnSuccessListener { freshLoc ->
+                        Timber.d("Fresh fix received: lat=${freshLoc?.latitude}, lng=${freshLoc?.longitude}")
+                        continuation.resume(freshLoc)
+                    }
+                    .addOnFailureListener { e ->
+                        Timber.e(e, "Failed to get fresh current location")
+                        continuation.resume(null)
+                    }
+            }
+        }.addOnFailureListener { e ->
+            Timber.e(e, "Failed to get last known location")
+            continuation.resume(null)
         }
     }
 

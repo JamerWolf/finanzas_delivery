@@ -15,6 +15,11 @@ interface LocationTracker {
     fun getLocationUpdates(): Flow<Location>
 
     /**
+     * Attempts to get the current location of the device once.
+     */
+    suspend fun getCurrentLocation(): Location?
+
+    /**
      * Stops receiving location updates and cleans up resources.
      */
     fun stopTracking()

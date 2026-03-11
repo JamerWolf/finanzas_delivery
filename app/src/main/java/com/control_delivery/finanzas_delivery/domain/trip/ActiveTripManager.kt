@@ -25,7 +25,9 @@ import javax.inject.Singleton
  * It only receives location updates and accumulates distance.
  */
 @Singleton
-class ActiveTripManager @Inject constructor() {
+class ActiveTripManager @Inject constructor(
+    private val locationTracker: com.control_delivery.finanzas_delivery.domain.location.LocationTracker
+) {
 
     private val _activeTrip = MutableStateFlow<Trip?>(null)
     val activeTrip: StateFlow<Trip?> = _activeTrip.asStateFlow()
@@ -38,25 +40,40 @@ class ActiveTripManager @Inject constructor() {
 
     /**
      * Starts a new trip with the given initial order.
+     * Captures the current location immediately to establish the starting point.
      * If a trip is already active, this is a no-op (use [addOrder] instead).
      *
      * @return the Trip ID, or null if a trip was already active.
      */
-    fun startTrip(initialOrder: Order): String? {
+    suspend fun startTrip(initialOrder: Order): String? {
         if (_activeTrip.value != null) {
             Timber.w("startTrip called but a trip is already active (id=${_activeTrip.value?.id})")
             return null
         }
 
+        // Capture initial location immediately
+        val startLocation = locationTracker.getCurrentLocation()
+        lastLocation = startLocation
+
+        val initialRoute = startLocation?.let {
+            listOf(com.control_delivery.finanzas_delivery.domain.model.RoutePoint(it.latitude, it.longitude))
+        } ?: emptyList()
+
         val trip = Trip(
             orders = listOf(initialOrder),
             status = TripStatus.ACTIVE,
             totalDistanceKm = 0.0,
-            startTimestamp = System.currentTimeMillis()
+            startTimestamp = System.currentTimeMillis(),
+            route = initialRoute
         )
         _activeTrip.value = trip
-        lastLocation = null
-        Timber.d("Trip started: id=${trip.id}, initialOrder=${initialOrder.id}")
+        
+        if (startLocation != null) {
+            Timber.d("Trip started at: lat=${startLocation.latitude}, lng=${startLocation.longitude}")
+        } else {
+            Timber.w("Trip started but could not capture initial GPS point immediately")
+        }
+        
         return trip.id
     }
 
@@ -137,7 +154,18 @@ class ActiveTripManager @Inject constructor() {
         lastLocation = location
 
         if (previous == null) {
-            Timber.d("First GPS fix received, no distance to accumulate yet")
+            Timber.d("First GPS fix received after start (or previous was missing). Recording initial point.")
+            _activeTrip.update { currentTrip ->
+                if (currentTrip == null) return@update null
+                // If route is empty, add this as the first point
+                if (currentTrip.route.isEmpty()) {
+                    currentTrip.copy(
+                        route = listOf(com.control_delivery.finanzas_delivery.domain.model.RoutePoint(location.latitude, location.longitude))
+                    )
+                } else {
+                    currentTrip
+                }
+            }
             return
         }
 
@@ -159,6 +187,14 @@ class ActiveTripManager @Inject constructor() {
                 lat = location.latitude,
                 lng = location.longitude
             )
+            
+            // Avoid adding duplicate consecutive points (simple check)
+            if (currentTrip.route.isNotEmpty()) {
+                val lastPoint = currentTrip.route.last()
+                if (lastPoint.lat == newRoutePoint.lat && lastPoint.lng == newRoutePoint.lng) {
+                    return@update currentTrip
+                }
+            }
             
             currentTrip.copy(
                 totalDistanceKm = newTotal,
