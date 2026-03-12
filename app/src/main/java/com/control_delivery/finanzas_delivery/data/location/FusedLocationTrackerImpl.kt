@@ -31,10 +31,10 @@ class FusedLocationTrackerImpl(
 
     private val locationRequest = LocationRequest.Builder(
         Priority.PRIORITY_HIGH_ACCURACY,
-        10_000L // 10 second interval
+        5_000L // 5 second interval as requested
     ).apply {
         setMinUpdateDistanceMeters(5f)
-        setMinUpdateIntervalMillis(5_000L) // fastest 5 seconds
+        setMinUpdateIntervalMillis(3_000L) // fastest 3 seconds
     }.build()
 
     @SuppressLint("MissingPermission")

@@ -19,7 +19,9 @@ class OsrmRouteRepository @Inject constructor(
         
         // 1. Try Match API first (best for high-density GPS traces)
         try {
-            val radiusesString = points.joinToString(";") { "50" } 
+            // Reduced radius from 50 to 20 to force snapping to the actual road 
+            // and avoid loops in side-streets or parallel roads.
+            val radiusesString = points.joinToString(";") { "20" } 
             val response = apiService.getMatch(coordinates = coordinateString, radiuses = radiusesString)
             
             if (response.code == "Ok" && !response.matchings.isNullOrEmpty()) {

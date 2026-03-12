@@ -150,6 +150,13 @@ class ActiveTripManager @Inject constructor(
      * Calculates delta distance from previous location and accumulates it.
      */
     fun onNewLocation(location: Location) {
+        // Quality Filter: Ignore points with poor accuracy (> 20m) 
+        // to prevent OSRM from snapping to wrong side-streets/alleys.
+        if (location.accuracy > 20f) {
+            Timber.d("Ignoring low accuracy GPS fix: ${location.accuracy}m")
+            return
+        }
+
         val previous = lastLocation
         lastLocation = location
 
