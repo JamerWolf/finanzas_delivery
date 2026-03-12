@@ -17,14 +17,34 @@ class OsrmRouteRepository @Inject constructor(
         // OSRM format: lon,lat;lon,lat;...
         val coordinateString = points.joinToString(";") { "${it.lng},${it.lat}" }
         
+        // Calculate the "straight-line" distance of the original trace for validation
+        val originalDistance = calculateTotalDistance(points)
+        
         // 1. Try Match API first (best for high-density GPS traces)
         try {
-            // Reduced radius from 50 to 20 to force snapping to the actual road 
-            // and avoid loops in side-streets or parallel roads.
-            val radiusesString = points.joinToString(";") { "20" } 
-            val response = apiService.getMatch(coordinates = coordinateString, radiuses = radiusesString)
+            // Using a very small radius (10m) to force snapping to the closest street
+            // and disabling 'tidy' to preserve all points.
+            val radiusesString = points.joinToString(";") { "10" } 
+            
+            // Note: We are now using the FOSSGIS bicycle server.
+            val response = apiService.getMatch(
+                profile = "bicycle", 
+                coordinates = coordinateString, 
+                radiuses = radiusesString,
+                tidy = false
+            )
             
             if (response.code == "Ok" && !response.matchings.isNullOrEmpty()) {
+                val matchedRoute = response.matchings.first()
+                val osrmDistance = matchedRoute.distance ?: 0.0
+                
+                // VALIDATION: If OSRM distance is > 35% longer than the GPS trace, 
+                // it likely created a "loop" to follow traffic rules (one-way streets, etc).
+                if (osrmDistance > originalDistance * 1.35) {
+                    Timber.w("OSRM Match rejected: Potential loop detected. GPS: ${originalDistance.toInt()}m, OSRM: ${osrmDistance.toInt()}m")
+                    return null
+                }
+
                 val snappedPoints = mutableListOf<RoutePoint>()
                 response.matchings.forEach { matching ->
                     matching.geometry.coordinates.forEach { coord ->
@@ -33,7 +53,7 @@ class OsrmRouteRepository @Inject constructor(
                         }
                     }
                 }
-                Timber.d("OSRM Match successful. Original: ${points.size}, Snapped: ${snappedPoints.size}")
+                Timber.d("OSRM Match successful. GPS Dist: ${originalDistance.toInt()}m, Snapped Dist: ${osrmDistance.toInt()}m")
                 return snappedPoints
             } else {
                 Timber.w("OSRM Match returned code: ${response.code}. Trying Route API fallback...")
@@ -44,8 +64,16 @@ class OsrmRouteRepository @Inject constructor(
 
         // 2. Fallback to Route API (best for sparse waypoints or when Match fails)
         try {
-            val response = apiService.getRoute(coordinates = coordinateString)
+            val response = apiService.getRoute(profile = "bicycle", coordinates = coordinateString)
             if (response.code == "Ok" && !response.routes.isNullOrEmpty()) {
+                val routeData = response.routes.first()
+                val osrmDistance = routeData.distance ?: 0.0
+
+                if (osrmDistance > originalDistance * 1.35) {
+                    Timber.w("OSRM Route rejected: Potential loop detected. GPS: ${originalDistance.toInt()}m, OSRM: ${osrmDistance.toInt()}m")
+                    return null
+                }
+
                 val routePoints = mutableListOf<RoutePoint>()
                 response.routes.forEach { route ->
                     route.geometry.coordinates.forEach { coord ->
@@ -54,7 +82,7 @@ class OsrmRouteRepository @Inject constructor(
                         }
                     }
                 }
-                Timber.d("OSRM Route successful. Points: ${routePoints.size}")
+                Timber.d("OSRM Route successful. GPS Dist: ${originalDistance.toInt()}m, Snapped Dist: ${osrmDistance.toInt()}m")
                 return routePoints
             } else {
                 Timber.w("OSRM Route failed with code: ${response.code}")
@@ -63,8 +91,35 @@ class OsrmRouteRepository @Inject constructor(
             Timber.e(e, "OSRM Route failed too.")
         }
 
-        // Final fallback: Return null to indicate snapping failure (to avoid caching bad data)
-        Timber.d("All OSRM attempts failed. Returning null.")
+        // Final fallback: Return null to indicate snapping failure.
+        // The calling UseCase/ViewModel should handle this by showing the raw GPS trace.
+        Timber.d("All OSRM attempts failed or rejected. Returning null to fallback to raw GPS.")
         return null
+    }
+
+    /**
+     * Calculates the cumulative distance of a list of points in meters.
+     */
+    private fun calculateTotalDistance(points: List<RoutePoint>): Double {
+        var total = 0.0
+        for (i in 0 until points.size - 1) {
+            total += haversineDistance(points[i], points[i + 1])
+        }
+        return total
+    }
+
+    private fun haversineDistance(p1: RoutePoint, p2: RoutePoint): Double {
+        val r = 6371e3 // Earth radius in meters
+        val lat1 = Math.toRadians(p1.lat)
+        val lat2 = Math.toRadians(p2.lat)
+        val dLat = Math.toRadians(p2.lat - p1.lat)
+        val dLng = Math.toRadians(p2.lng - p1.lng)
+
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1) * Math.cos(lat2) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+        return r * c
     }
 }

@@ -96,7 +96,7 @@ object AppModule {
             .build()
 
         return retrofit2.Retrofit.Builder()
-            .baseUrl("http://router.project-osrm.org/")
+            .baseUrl("https://routing.openstreetmap.de/routed-bike/")
             .client(client)
             .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
             .build()

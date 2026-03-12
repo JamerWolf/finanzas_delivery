@@ -9,7 +9,9 @@ data class OsrmResponse(
 )
 
 data class OsrmRouteData(
-    val geometry: OsrmGeometry
+    val geometry: OsrmGeometry,
+    val distance: Double?,
+    val duration: Double?
 )
 
 data class OsrmGeometry(
