@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.control_delivery.finanzas_delivery.ui.components.map.TripMap
+import com.control_delivery.finanzas_delivery.utils.AppConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,7 +110,13 @@ fun TripDetailScreen(
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding(), bottom = 0.dp)) {
                 if (state.trip != null) {
-                    val displayRoute = if (state.snappedRoute.isNotEmpty()) state.snappedRoute else state.trip.route
+                    // Show snapped route only if the feature is enabled
+                    val displayRoute = if (AppConfig.FEATURE_ROUTE_SNAPPING && state.snappedRoute.isNotEmpty()) {
+                        state.snappedRoute 
+                    } else {
+                        state.trip.route
+                    }
+                    
                     TripMap(
                         route = displayRoute,
                         orders = state.trip.orders,
@@ -185,7 +192,8 @@ fun TripDetailScreen(
                         }
                     }
                     
-                    if (state.isSnappingRoute) {
+                    // Snapping indicator (only if feature enabled)
+                    if (AppConfig.FEATURE_ROUTE_SNAPPING && state.isSnappingRoute) {
                         Surface(
                             modifier = Modifier.padding(16.dp).align(Alignment.TopEnd),
                             shape = RoundedCornerShape(50),

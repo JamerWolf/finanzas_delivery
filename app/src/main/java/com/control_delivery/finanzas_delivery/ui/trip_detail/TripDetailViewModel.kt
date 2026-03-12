@@ -5,15 +5,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.control_delivery.finanzas_delivery.domain.usecases.GetTripByIdUseCase
+import com.control_delivery.finanzas_delivery.domain.repository.TripRepository
 import com.control_delivery.finanzas_delivery.domain.usecases.DeleteTripUseCase
+import com.control_delivery.finanzas_delivery.domain.usecases.GetDistanceBasedExpensesUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.GetSnappedRouteUseCase
 import com.control_delivery.finanzas_delivery.domain.usecases.GetTimeBasedExpensesUseCase
-import com.control_delivery.finanzas_delivery.domain.usecases.GetDistanceBasedExpensesUseCase
-import com.control_delivery.finanzas_delivery.domain.repository.TripRepository
+import com.control_delivery.finanzas_delivery.domain.usecases.GetTripByIdUseCase
+import com.control_delivery.finanzas_delivery.utils.AppConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
@@ -67,8 +67,8 @@ class TripDetailViewModel @Inject constructor(
                         snappedRoute = trip.snappedRoute ?: emptyList()
                     )
                     
-                    // If snapped route is not yet in cache, try to fetch it
-                    if (trip.snappedRoute == null && trip.route.isNotEmpty() && !uiState.isSnappingRoute) {
+                    // If feature is enabled and snapped route is not yet in cache, try to fetch it
+                    if (AppConfig.FEATURE_ROUTE_SNAPPING && trip.snappedRoute == null && trip.route.isNotEmpty() && !uiState.isSnappingRoute) {
                         snapAndCacheRoute(trip)
                     }
                     
