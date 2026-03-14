@@ -7,16 +7,29 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
+import com.control_delivery.finanzas_delivery.data.local.DatabaseInitializer
 import com.control_delivery.finanzas_delivery.ui.components.bottom_nav_bar.AppBottomBar
 import com.control_delivery.finanzas_delivery.ui.theme.Finanzas_deliveryTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var dbInitializer: DatabaseInitializer
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        lifecycleScope.launch {
+            dbInitializer.initializeDefaults()
+        }
+
         setContent {
             Finanzas_deliveryTheme {
                 val navController = rememberNavController()

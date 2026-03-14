@@ -22,5 +22,6 @@ data class TripDetailUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
     val isDeleteDialogVisible: Boolean = false,
-    val isInfoPopupVisible: Boolean = false
+    val isInfoPopupVisible: Boolean = false,
+    val orderToEdit: Order? = null
 )

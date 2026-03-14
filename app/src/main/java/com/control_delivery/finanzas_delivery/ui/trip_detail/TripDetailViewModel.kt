@@ -120,4 +120,12 @@ class TripDetailViewModel @Inject constructor(
     fun toggleInfoPopup() {
         uiState = uiState.copy(isInfoPopupVisible = !uiState.isInfoPopupVisible)
     }
+
+    fun onEditOrder(order: com.control_delivery.finanzas_delivery.domain.model.Order) {
+        uiState = uiState.copy(orderToEdit = order)
+    }
+
+    fun onDismissEditOrder() {
+        uiState = uiState.copy(orderToEdit = null)
+    }
 }

@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.control_delivery.finanzas_delivery.ui.add_order.AddOrderDialog
 import com.control_delivery.finanzas_delivery.ui.components.map.TripMap
 import com.control_delivery.finanzas_delivery.utils.AppConfig
 
@@ -101,6 +102,7 @@ fun TripDetailScreen(
                 TripDetailContent(
                     state = state,
                     onToggleInfo = { viewModel.toggleInfoPopup() },
+                    onEditOrder = { viewModel.onEditOrder(it) },
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
@@ -249,6 +251,13 @@ fun TripDetailScreen(
             }
         )
     }
+
+    if (state.orderToEdit != null) {
+        AddOrderDialog(
+            orderToEdit = state.orderToEdit,
+            onDismiss = { viewModel.onDismissEditOrder() }
+        )
+    }
 }
 
 @Composable
@@ -284,6 +293,7 @@ fun LegendItem(
 fun TripDetailContent(
     state: TripDetailUiState,
     onToggleInfo: () -> Unit,
+    onEditOrder: (com.control_delivery.finanzas_delivery.domain.model.Order) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -376,7 +386,10 @@ fun TripDetailContent(
         // Orders List
         Text("Orders in this Trip", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         state.orders.forEach { order ->
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { onEditOrder(order) }
+            ) {
                 ListItem(
                     headlineContent = { Text(order.platform.uppercase(), fontWeight = FontWeight.Bold) },
                     supportingContent = { Text(order.customerAddress, maxLines = 1) },

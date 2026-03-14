@@ -93,10 +93,15 @@ Use `gradlew.bat` for Windows environments.
 ## 6. GPS & Mapping Logic
 
 ### OSRM Routing
-- We use the public OSRM server: `https://router.project-osrm.org/`.
+- We use the FOSSGIS OSRM server for bicycle routing: `https://routing.openstreetmap.de/routed-bike/`.
+- **Profile:** Uses `bicycle` profile to allow riding on streets with contraflow and bike paths.
 - **User-Agent:** Every request must include a custom User-Agent header (configured in `AppModule`).
 - **Batching:** When snapping routes, chunk coordinates into batches of 90 points max to stay within URL length limits.
 - **Double Fallback:** The repository should try the `Match API` first, and if it returns an error, attempt the `Route API` before giving up.
+- **Snapping Parameters:**
+  - `tidy = false`: Preserves all GPS points without smoothing.
+  - `radiuses = 10`: Small search radius (10 meters) to snap to the nearest street.
+- **Loop Detection:** The repository calculates the original GPS trace distance using Haversine formula. If OSRM returns a route > 35% longer than the original (likely creating loops for one-way streets), it rejects the snap and returns `null` to fall back to raw GPS trace.
 
 ### Map Rendering
 - We use MapLibre. Map styles (Light/Dark) must switch dynamically based on `isSystemInDarkTheme()`.
@@ -105,7 +110,45 @@ Use `gradlew.bat` for Windows environments.
 
 ---
 
-## 7. Workflow Expectations
+## 7. Default Expenses
+
+On first app launch, the system pre-populates the database with default expenses if empty:
+
+### Time-Based Expenses (Savings Goals)
+- **SOAT:** $343,000 - Annual (November 26)
+- **RTM:** $250,000 - Annual (November 20)
+- **Plan celular:** $30,000 - Monthly (Day 6)
+
+### Distance-Based Expenses
+- **Gasolina:** $14,500 per 120km (Pure Deduction)
+- **Aceite, Filtro, Mant:** $80,000 goal every 2,000km (Savings Goal)
+
+### Implementation
+- Located in: `data/local/DatabaseInitializer.kt`
+- Executes on: `MainActivity.kt` (via `lifecycleScope.launch`)
+- Uses `DatabaseInitializer.initializeDefaults()` which checks if expenses exist before inserting.
+
+---
+
+## 8. Order Editing
+
+Orders can be edited in completed trips via the TripDetailScreen.
+
+### How it works
+- Clicking on any order card in TripDetailScreen opens `AddOrderDialog` in edit mode.
+- The `UpdateOrderUseCase` handles the update and automatically recalculates:
+  - Reverts old financial deductions via `ReverseTripIncomeUseCase`.
+  - Applies new deductions via `ProcessTripIncomeUseCase`.
+  - Updates the trip with new financial breakdowns.
+
+### Files Modified
+- `ui/trip_detail/TripDetailUiState.kt` - Added `orderToEdit: Order?` state.
+- `ui/trip_detail/TripDetailViewModel.kt` - Added `onEditOrder()` and `onDismissEditOrder()` methods.
+- `ui/trip_detail/TripDetailScreen.kt` - Made order cards clickable, added edit dialog.
+
+---
+
+## 9. Workflow Expectations
 - **Proactiveness:** If you modify a DAO or Entity, you MUST verify the build immediately as Room generation is sensitive to changes.
 - **Verification:** After significant logic changes, run the relevant unit tests in `app/src/test`.
 - **Sync Logic:** When a trip or order is deleted/updated, you MUST call `ReverseTripIncomeUseCase` to subtract the old values from the expense repositories before applying new ones.
